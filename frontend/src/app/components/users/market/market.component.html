@@ -1,0 +1,89 @@
+<section class="page" data-testid="market-page">
+  <h1>Market overview</h1>
+
+  @if (loading()) {
+    <p>Loading market data...</p>
+  } @else if (error()) {
+    <div class="banner error" role="alert">{{ error() }}</div>
+  } @else {
+    <article class="card table-card">
+      <h2>Instruments</h2>
+      @if (instruments().length === 0) {
+        <p>No instrument rows are available from account orders/positions yet.</p>
+      } @else {
+        <table>
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Asset Class</th>
+              <th>Currency</th>
+              <th>Price</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (instrument of instruments(); track instrument.symbol) {
+              <tr>
+                <td>{{ instrument.symbol }}</td>
+                <td>{{ instrument.assetClass }}</td>
+                <td>{{ instrument.currency }}</td>
+                <td class="tabular">
+                  @if (instrument.price !== null) {
+                    {{ instrument.price | number:'1.2-2' }}
+                  } @else {
+                    N/A
+                  }
+                </td>
+                <td>{{ instrument.status }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </article>
+
+    <article class="card" data-testid="currency-converter">
+      <h2>Currency converter</h2>
+      <p class="muted">
+        Conversion API integration is prepared. The backend converter endpoint is not currently exposed in
+        the trade service contracts.
+      </p>
+
+      <form [formGroup]="conversionForm" (ngSubmit)="convertCurrency()">
+        <div class="field">
+          <label for="fromCurrency">From</label>
+          <select id="fromCurrency" formControlName="fromCurrency" data-testid="currency-from">
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="INR">INR</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="amount">Amount</label>
+          <input id="amount" type="text" formControlName="amount" data-testid="currency-amount" />
+        </div>
+
+        <div class="field">
+          <label for="toCurrency">To</label>
+          <select id="toCurrency" formControlName="toCurrency" data-testid="currency-to">
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="INR">INR</option>
+          </select>
+        </div>
+
+        <button class="primary" type="submit" data-testid="convert-currency">Convert</button>
+      </form>
+
+      @if (conversionResult() !== null) {
+        <p class="tabular">Converted amount: {{ conversionResult() | number:'1.2-2' }}</p>
+      }
+
+      @if (conversionError()) {
+        <div class="banner error" role="alert">{{ conversionError() }}</div>
+      }
+    </article>
+  }
+</section>
+

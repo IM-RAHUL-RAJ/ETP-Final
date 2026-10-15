@@ -1,0 +1,203 @@
+:host {
+  display: block;
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.head h1 {
+  margin-bottom: 4px;
+}
+
+.list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  gap: 12px;
+  padding: 18px 22px;
+}
+
+.item__head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.item__head h2 {
+  margin: 0;
+  flex: 1;
+}
+
+.signal {
+  padding: 4px 14px;
+  font-weight: 800;
+  color: var(--text);
+  background: var(--muted-bg);
+  border: 1px solid var(--line);
+}
+
+.signal[data-signal='BUY'] {
+  color: #fff;
+  background: var(--buy);
+  border-color: var(--buy);
+}
+
+.signal[data-signal='SELL'] {
+  color: #fff;
+  background: var(--sell);
+  border-color: var(--sell);
+}
+
+.why {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0 0 0 20px;
+  color: var(--text);
+}
+
+.fine {
+  font-size: 13px;
+}
+
+.mood {
+  display: grid;
+  gap: 12px;
+  padding: 18px 22px;
+}
+
+.mood__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.mood h2 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.mood[data-tone='up'] h2,
+.up {
+  color: var(--ok);
+}
+
+.mood[data-tone='down'] h2,
+.down {
+  color: var(--reject);
+}
+
+.bar {
+  display: flex;
+  height: 12px;
+  overflow: hidden;
+  background: var(--muted-bg);
+}
+
+.bar__up {
+  background: var(--ok);
+}
+
+.bar__flat {
+  background: var(--muted);
+  opacity: 0.45;
+}
+
+.bar__down {
+  background: var(--reject);
+}
+
+.trend {
+  padding: 4px 12px;
+  font-weight: 800;
+  background: var(--muted-bg);
+  border: 1px solid var(--line);
+}
+
+.trend[data-trend='BULLISH'] {
+  color: var(--ok);
+  background: var(--ok-bg);
+}
+
+.trend[data-trend='BEARISH'] {
+  color: var(--reject);
+  background: var(--reject-bg);
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.metrics div {
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+
+.metrics dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.metrics dd {
+  margin: 2px 0 0;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.rsi {
+  display: grid;
+  gap: 6px;
+}
+
+.rsi__head {
+  display: flex;
+  justify-content: space-between;
+}
+
+.rsi__bar {
+  position: relative;
+  display: grid;
+  grid-template-columns: 30fr 40fr 30fr;
+  height: 10px;
+}
+
+.rsi__zone--low {
+  background: var(--ok-bg);
+}
+
+.rsi__zone--mid {
+  background: var(--muted-bg);
+}
+
+.rsi__zone--high {
+  background: var(--reject-bg);
+}
+
+.rsi__marker {
+  position: absolute;
+  top: -4px;
+  width: 4px;
+  height: 18px;
+  background: var(--text);
+  transform: translateX(-50%);
+}
+
+.chart-toggle {
+  justify-self: start;
+}

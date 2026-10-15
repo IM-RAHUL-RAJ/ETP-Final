@@ -1,0 +1,260 @@
+:host {
+  display: block;
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.head h1 {
+  margin-bottom: 4px;
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.card h2 {
+  margin-bottom: 12px;
+}
+
+.rows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px dashed var(--line);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.row__main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.problem {
+  color: var(--reject);
+  font-weight: 700;
+}
+
+.state,
+.outcome {
+  flex: none;
+  padding: 2px 12px;
+  font-weight: 800;
+  background: var(--muted-bg);
+  border: 1px solid var(--line);
+}
+
+.state[data-state='Active'],
+.outcome[data-outcome='ORDER_SUBMITTED'] {
+  color: var(--ok);
+  background: var(--ok-bg);
+}
+
+.state[data-state='Invalid'],
+.outcome[data-outcome='ORDER_REJECTED'],
+.outcome[data-outcome='ORDER_SUBMISSION_FAILED'] {
+  color: var(--reject);
+  background: var(--reject-bg);
+}
+
+.fine {
+  font-size: 13px;
+}
+
+.head__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.row__side {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progress {
+  font-weight: 700;
+}
+
+.progress--ready {
+  color: var(--ok);
+}
+
+.form {
+  display: grid;
+  gap: 14px;
+}
+
+.form .field {
+  display: grid;
+  gap: 6px;
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.confirm {
+  display: grid;
+  gap: 12px;
+}
+
+.warn-text {
+  padding: 10px 12px;
+  background: var(--amber-bg);
+  border: 1px solid var(--line);
+}
+
+.ack {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+}
+
+.state[data-state='On'] {
+  color: var(--ok);
+  background: var(--ok-bg);
+}
+
+.meter {
+  display: block;
+  width: min(360px, 100%);
+  height: 8px;
+  background: var(--muted-bg);
+  border: 1px solid var(--line);
+}
+
+.meter__fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.extras {
+  display: grid;
+  gap: 10px;
+  padding: 0 0 14px;
+  list-style: none;
+  border-bottom: 1px dashed var(--line);
+}
+
+.demo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--amber-bg);
+  border: 1px solid var(--line);
+}
+
+.demo .muted {
+  flex: 1;
+  min-width: 220px;
+}
+
+.type-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--blue);
+  background: var(--blue-bg);
+}
+
+.type-badge[data-type='BOLLINGER_BANDS'] {
+  color: var(--amber);
+  background: var(--amber-bg);
+}
+
+.trades h3 {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+
+.trade-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.trade {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  padding: 6px 10px;
+  background: var(--muted-bg);
+  font-variant-numeric: tabular-nums;
+}
+
+.trade__when {
+  min-width: 130px;
+  color: var(--muted);
+}
+
+.side {
+  min-width: 40px;
+  font-weight: 800;
+}
+
+.side[data-side='BUY'] {
+  color: var(--ok);
+}
+
+.side[data-side='SELL'] {
+  color: var(--reject);
+}
+
+.trade__what {
+  flex: 1;
+  min-width: 140px;
+}
+
+.detail {
+  flex-basis: 100%;
+  font-size: 12px;
+}
+
+/* the dialogs: fields fill the width */
+.form input,
+.form app-select {
+  width: 100%;
+}
+
+/* Grid items may shrink below their content, so a long choice is cut with "..." rather than pushing the dialog wider. */
+.form,
+.form .field,
+.pair > * {
+  min-width: 0;
+}
+
+.form app-select {
+  display: block;
+  min-width: 0;
+}

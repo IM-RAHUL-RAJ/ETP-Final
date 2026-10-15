@@ -1,0 +1,161 @@
+:host {
+  display: block;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.head h1 {
+  margin: 0 0 4px;
+}
+
+.head__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.head__actions .active {
+  background: var(--muted-bg);
+  border-color: var(--text);
+}
+
+.list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.message {
+  display: grid;
+  gap: 6px;
+  padding: 18px 20px;
+  border-left: 4px solid var(--line);
+}
+
+/* Unread: a red pixel bar on the edge, like a notification light. */
+.message--unread {
+  border-left-color: var(--signal);
+}
+
+.message__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--muted-bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+}
+
+.kind[data-kind='ORDER_FILLED'] {
+  background-color: var(--ok-bg);
+  color: var(--ok);
+  border-color: transparent;
+}
+
+.kind[data-kind='ORDER_REJECTED'] {
+  background-color: var(--reject-bg);
+  color: var(--reject);
+  border-color: transparent;
+}
+
+.kind[data-kind='ORDER_CANCELLED'] {
+  background-color: var(--cancel-bg);
+  color: var(--cancel);
+  border-color: transparent;
+}
+
+.kind[data-kind='PRICE_ALERT'] {
+  background-color: var(--amber-bg);
+  color: var(--amber);
+  border-color: transparent;
+}
+
+.kind[data-kind='FUNDS'] {
+  background-color: var(--new-bg);
+  color: var(--new);
+  border-color: transparent;
+}
+
+.message__subject {
+  font-size: 17px;
+}
+
+.message__body {
+  color: var(--text);
+}
+
+.message__delivery {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.message__delivery .dot {
+  background: var(--slate);
+}
+
+.message__delivery[data-status='SENT'] .dot {
+  background: var(--ok);
+}
+
+.message__delivery[data-status='QUEUED'] .dot,
+.message__delivery[data-status='HELD'] .dot {
+  background: var(--amber);
+}
+
+.message__delivery[data-status='FAILED'] .dot {
+  background: var(--reject);
+}
+
+.message__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* A trade an automated strategy placed, so it is never mistaken for one placed by hand. */
+.automated {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 1px 8px;
+  vertical-align: middle;
+  color: var(--blue);
+  background: var(--blue-bg);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.auto-banner {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  color: var(--on-accent);
+  background: var(--accent);
+  font-family: var(--font-body);
+}
+
+.auto-banner span {
+  font-size: 13px;
+  opacity: 0.9;
+}

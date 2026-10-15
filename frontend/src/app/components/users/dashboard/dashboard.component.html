@@ -1,0 +1,103 @@
+<section class="page" data-testid="dashboard">
+  @if (loading()) {
+    <article class="card" aria-busy="true" aria-label="Loading dashboard">
+      <span class="skeleton short"></span><span class="skeleton"></span><span class="skeleton"></span>
+    </article>
+  } @else if (error()) {
+    <div class="banner error" role="alert">{{ error() }}</div>
+    <div><button type="button" class="secondary" (click)="loadDashboard()">Try again</button></div>
+  } @else {
+    <!-- One calm opening: who you are, what you are worth, and the one thing you probably want to do. -->
+    <article class="hero card" data-testid="net-worth">
+      <app-mascot class="hero__mascot" [action]="orders().length === 0 ? 'wave' : 'happy'" [size]="132" />
+      <div class="hero__main">
+        <p class="muted" data-testid="dashboard-greeting">{{ greeting() }}</p>
+        <p class="hero__label muted">Net worth</p>
+        <p class="hero__value display" data-testid="stat-networth">
+          <app-animated-number [value]="netWorth()" [decimals]="2" />
+          <span class="hero__unit">{{ balance()?.currency }}</span>
+        </p>
+        <p class="hero__meta muted">
+          <span class="mono" data-testid="dashboard-account-id">{{ account()?.accountId }}</span>
+          @if (account(); as acc) {
+            <span class="state" [class.state--off]="acc.status !== 'ACTIVE'">{{ acc.status }}</span>
+          }
+        </p>
+      </div>
+      <a class="button lg hero__cta" routerLink="/order-ticket">
+        <app-icon name="plus" [size]="18" /> New order
+      </a>
+    </article>
+
+    <div class="figures" data-testid="figures">
+      <div class="figure">
+        <p class="muted">Cash</p>
+        <p class="figure__value" data-testid="stat-cash">{{ balance()?.cashBalance ?? 0 | number: '1.2-2' }}</p>
+      </div>
+      <div class="figure">
+        <p class="muted">Invested, at cost</p>
+        <p class="figure__value" data-testid="stat-invested">{{ invested() | number: '1.2-2' }}</p>
+      </div>
+      <div class="figure">
+        <p class="muted">Working orders</p>
+        <p class="figure__value" data-testid="stat-working">{{ workingOrders() }}</p>
+      </div>
+    </div>
+
+    <div class="panels">
+      <article class="card panel">
+        <div class="panel__head">
+          <h2>Holdings</h2>
+          <a routerLink="/portfolio">See all</a>
+        </div>
+        @if (holdingRows().length === 0) {
+          <app-empty-state title="No holdings yet" message="Filled buy orders show up here." [size]="96">
+            <a class="button" routerLink="/order-ticket">Place an order</a>
+          </app-empty-state>
+        } @else {
+          <ul class="rows">
+            @for (row of holdingRows(); track row.symbol) {
+              <li data-testid="holding-row">
+                <span class="rows__main">
+                  <strong>{{ row.symbol }}</strong>
+                  <span class="muted">{{ row.quantity }} held</span>
+                </span>
+                <span class="share" role="img" [attr.aria-label]="(row.share | number: '1.0-0') + ' percent of what you hold'">
+                  <span class="share__bar" [style.width.%]="row.share"></span>
+                </span>
+                <span class="rows__figure">{{ row.cost | number: '1.2-2' }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </article>
+
+      <article class="card panel">
+        <div class="panel__head">
+          <h2>Recent orders</h2>
+          <a routerLink="/blotter">See all</a>
+        </div>
+        @if (recentOrders().length === 0) {
+          <app-empty-state title="No orders yet" message="Place your first order from the order ticket." [size]="96">
+            <a class="button" routerLink="/order-ticket">Place an order</a>
+          </app-empty-state>
+        } @else {
+          <ul class="rows">
+            @for (order of recentOrders(); track order.orderId) {
+              <li data-testid="recent-order">
+                <span class="side" [class.side--sell]="order.side === 'SELL'" [attr.aria-label]="order.side === 'BUY' ? 'Buy' : 'Sell'">
+                  {{ order.side === 'BUY' ? 'B' : 'S' }}
+                </span>
+                <span class="rows__main">
+                  <strong>{{ order.symbol }}</strong>
+                  <span class="muted">{{ order.quantity }} &times; {{ order.createdOn | date: 'd MMM, HH:mm' }}</span>
+                </span>
+                <app-status-badge [status]="order.status" />
+              </li>
+            }
+          </ul>
+        }
+      </article>
+    </div>
+  }
+</section>

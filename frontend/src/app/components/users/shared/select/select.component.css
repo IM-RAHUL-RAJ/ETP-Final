@@ -1,0 +1,142 @@
+:host {
+  display: block;
+}
+
+.select {
+  position: relative;
+}
+
+/* The trigger is an input in everything but name. */
+.select__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  height: 38px;
+  padding: 0 10px 0 12px;
+  font-weight: 500;
+  text-align: left;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.select__trigger:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--text) 30%, var(--line));
+}
+
+.select--open .select__trigger,
+.select__trigger:focus-visible {
+  border-color: var(--text);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+.select__trigger--invalid {
+  border-color: var(--reject);
+}
+
+.select__value,
+.select__label {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.select__hint {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+}
+
+.select__placeholder {
+  color: var(--muted);
+}
+
+.select__chevron {
+  flex: none;
+  color: var(--muted);
+  transition: transform var(--fast) ease-out;
+}
+
+.select--open .select__chevron {
+  transform: rotate(180deg);
+}
+
+/* The popover: a card with a search box on top and a scrolling list under it. */
+.select__panel {
+  position: fixed;
+  z-index: 200;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  transform-origin: top;
+  animation: selectIn 160ms var(--ease);
+}
+
+.select__search {
+  margin-bottom: 6px;
+  height: 34px;
+  box-shadow: none;
+}
+
+.select__list {
+  max-height: 264px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.select__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.select__item--active {
+  background: var(--muted-bg);
+}
+
+.select__tag {
+  flex: none;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+}
+
+.select__check {
+  flex: none;
+  color: var(--text);
+}
+
+.select__empty {
+  padding: 16px 10px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+@keyframes selectIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}

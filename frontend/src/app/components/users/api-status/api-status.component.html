@@ -1,0 +1,34 @@
+<section class="page" data-testid="api-status">
+  <div class="header">
+    <h1>System status</h1>
+    <button class="secondary" type="button" (click)="refreshStatus()" data-testid="refresh-api-status">
+      Refresh status
+    </button>
+  </div>
+
+  @if (loading()) {
+    <p>Checking services...</p>
+  } @else if (error()) {
+    <div class="banner error" role="alert">{{ error() }}</div>
+  } @else {
+    <article class="card">
+      <ul>
+        @for (service of services(); track service.name) {
+          <li>
+            <span>{{ service.name }}</span>
+            <span class="status-badge" [attr.data-status]="service.status">
+              @if (service.status === 'ONLINE') {
+                ● ONLINE
+              } @else if (service.status === 'NOT_CONFIGURED') {
+                ○ NOT CONFIGURED
+              } @else {
+                — UNAVAILABLE
+              }
+            </span>
+          </li>
+        }
+      </ul>
+    </article>
+  }
+</section>
+

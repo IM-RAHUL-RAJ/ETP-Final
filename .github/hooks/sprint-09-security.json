@@ -1,0 +1,119 @@
+[
+  {
+    "id": "sprint-09-token-attachment-check",
+    "name": "Token Attachment Origin Validation",
+    "description": "Prevents bearer tokens from being sent to third-party origins by validating all Authorization headers against the allow-list.",
+    "trigger": "PostToolUse",
+    "toolPattern": "replace_string_in_file|read_file",
+    "condition": {
+      "filePattern": "sprint-09-trading-ui/**/*.ts",
+      "contentPattern": "Authorization.*Bearer|setHeaders.*Authorization"
+    },
+    "action": "warn",
+    "message": "[Security Check] Token attachment detected. Verify:\n  1. Is this in the authInterceptor (only place Authorization should be set)?\n  2. Does the interceptor check allowedOrigins allow-list?\n  3. Is HttpClient used (not fetch or XMLHttpRequest)?\n\nBearing tokens sent to third-party origins = reportable security incident."
+  },
+  {
+    "id": "sprint-09-return-url-validation",
+    "name": "Open Redirect Prevention",
+    "description": "Detects potential open redirect vulnerabilities where returnUrl is used without validation.",
+    "trigger": "PostToolUse",
+    "toolPattern": "replace_string_in_file|read_file",
+    "condition": {
+      "filePattern": "sprint-09-trading-ui/**/*.ts",
+      "contentPattern": "returnUrl|queryParams.*return|return.*Url"
+    },
+    "action": "warn",
+    "message": "[Security Check] Return URL detected. Verify:\n  1. Is returnUrl validated to start with '/' and not '//'?\n  2. Is navigateByUrl used only after validation?\n  3. For guards: is the URL created from state.url?\n\nUnvalidated returnUrl = open redirect vulnerability."
+  },
+  {
+    "id": "sprint-09-no-localstorage-tokens",
+    "name": "Token Storage Security",
+    "description": "Prevents tokens from being stored in localStorage, which is vulnerable to XSS and persists beyond logout.",
+    "trigger": "PostToolUse",
+    "toolPattern": "replace_string_in_file|read_file",
+    "condition": {
+      "filePattern": "sprint-09-trading-ui/**/*.ts",
+      "contentPattern": "localStorage.setItem.*token|localStorage.*token|sessionStorage.setItem.*token"
+    },
+    "action": "error",
+    "message": "[Security Error] Token found in localStorage or sessionStorage.\nTokens must be stored in memory only (signal() in services).\nReason: localStorage persists across sessions and is vulnerable to XSS.\nSessionStorage expires but is still world-readable.\nUse signal() and refresh token for silent refresh instead."
+  },
+  {
+    "id": "sprint-09-interceptor-centralization",
+    "name": "Single Interceptor Rule",
+    "description": "Ensures Authorization headers are set in exactly one place (the interceptor), preventing inconsistent token attachment.",
+    "trigger": "PostToolUse",
+    "toolPattern": "replace_string_in_file|read_file",
+    "condition": {
+      "filePattern": "sprint-09-trading-ui/src/**/*.service.ts",
+      "contentPattern": "setHeaders.*Authorization|HttpHeaders.*Authorization"
+    },
+    "action": "warn",
+    "message": "[Security Check] Authorization header set in a service.\nAll Authorization headers must go through the auth interceptor only.\nReason: Setting headers in multiple places guarantees you'll forget one.\n\nMove this to the authInterceptor in withInterceptors([authInterceptor])."
+  },
+  {
+    "id": "sprint-09-no-token-in-logs",
+    "name": "Token in Logs Prevention",
+    "description": "Detects potential token leakage in console.log, console.error, or error messages.",
+    "trigger": "PostToolUse",
+    "toolPattern": "replace_string_in_file|read_file",
+    "condition": {
+      "filePattern": "sprint-09-trading-ui/**/*.ts",
+      "contentPattern": "console\\.(log|error|warn).*token|console\\.(log|error|warn).*Token|throw.*token|throw.*Token|Error.*token"
+    },
+    "action": "warn",
+    "message": "[Security Check] Token or sensitive data may be logged.\nReason: Logs appear in DevTools, error trackers, and aggregation systems.\nTokens in logs = credentials leaked to third parties.\n\nRemove tokens from all console output, error messages, and logs.\nLog error status/message only, never the token or customer data."
+  },
+  {
+    "id": "sprint-09-route-guard-coverage",
+    "name": "Route Guard Enforcement",
+    "description": "Reminds developers to add canActivate guards to all protected routes.",
+    "trigger": "PostToolUse",
+    "toolPattern": "replace_string_in_file|read_file",
+    "condition": {
+      "filePattern": "sprint-09-trading-ui/**/routes.ts|sprint-09-trading-ui/**/app-routing.module.ts",
+      "contentPattern": "path.*:|Routes.*="
+    },
+    "action": "warn",
+    "message": "[Security Check] Routes configuration detected.\nVerify:\n  1. Every route except '/sign-in' has canActivate: [authGuard]\n  2. authGuard validates isAuthenticated()\n  3. authGuard redirects to '/sign-in' if not authenticated\n\nWithout guards, unauthenticated users can reach protected routes."
+  },
+  {
+    "id": "sprint-09-generated-clients-committed",
+    "name": "Generated Clients Must Be Committed",
+    "description": "Ensures generated API clients are committed to git, not gitignored.",
+    "trigger": "PostToolUse",
+    "toolPattern": "read_file",
+    "condition": {
+      "filePattern": "sprint-09-trading-ui/.gitignore",
+      "contentPattern": "generated/|/generated|src/api"
+    },
+    "action": "error",
+    "message": "[Configuration Error] Generated API clients are gitignored.\nGenerated clients MUST be committed.\n\nReason: Cloning the repo should build without Java runtime or network access.\nContract changes should appear as diffs reviewers read.\n\nRemove generated/ from .gitignore. Keep the generator command and version in README."
+  },
+  {
+    "id": "sprint-09-env-secrets-protection",
+    "name": "Environment Secrets Protection",
+    "description": "Ensures .env files are not committed and secrets are properly configured.",
+    "trigger": "PostToolUse",
+    "toolPattern": "read_file",
+    "condition": {
+      "filePattern": "sprint-09-trading-ui/.gitignore",
+      "contentPattern": "\\.env"
+    },
+    "action": "info",
+    "message": "[Configuration Check] .env protection in place.\nVerify:\n  1. .env is in .gitignore\n  2. .env.example is committed (template)\n  3. Team members copy .env.example to .env and fill in values\n  4. No secrets (API keys, tokens, credentials) in .env.example"
+  },
+  {
+    "id": "sprint-09-interceptor-test-coverage",
+    "name": "Interceptor Test Coverage",
+    "description": "Reminds developers to test both attach and do-not-attach cases for the auth interceptor.",
+    "trigger": "PostToolUse",
+    "toolPattern": "replace_string_in_file|read_file",
+    "condition": {
+      "filePattern": "sprint-09-trading-ui/**/*.interceptor.spec.ts|sprint-09-trading-ui/**/*.auth.spec.ts",
+      "contentPattern": "describe.*[Ii]nterceptor|describe.*auth"
+    },
+    "action": "info",
+    "message": "[Testing Reminder] Interceptor tests detected.\nVerify test coverage:\n  1. Test named 'should attach bearer token to own API requests'\n  2. Test named 'should NOT attach bearer token to third-party requests'\n  3. Both tests using HttpTestingController with appropriate mocks\n\nThese two test cases are explicitly assessed in the review."
+  }
+]

@@ -1,0 +1,124 @@
+name: SonarQube Analysis
+
+on:
+  push:
+    branches: ["**"]          # every push on every branch
+  pull_request:
+    branches: ["main", "develop"]
+  workflow_dispatch:           # also runnable manually from the Actions tab
+
+jobs:
+  # ============================================================
+  # Job 1: Trade Executor (Java)
+  # ============================================================
+  sonar-executor:
+    name: Sonar — Trade Executor
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # full history for blame annotations
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: temurin
+          cache: maven
+
+      - name: Build, test and generate JaCoCo coverage
+        working-directory: services/executor
+        run: mvn -B clean verify
+
+      - name: Run SonarQube scan
+        working-directory: services/executor
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Dsonar.projectKey=trade-executor \
+            -Dsonar.projectName="Trade Executor" \
+            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+            -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+
+  # ============================================================
+  # Job 2: Trade API (Java)
+  # ============================================================
+  sonar-trade-api:
+    name: Sonar — Trade API
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: temurin
+          cache: maven
+
+      - name: Build, test and generate JaCoCo coverage
+        working-directory: services/trade-api
+        run: mvn -B clean verify
+
+      - name: Run SonarQube scan
+        working-directory: services/trade-api
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Dsonar.projectKey=trade-api \
+            -Dsonar.projectName="Trade API" \
+            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+            -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+
+  # ============================================================
+  # Job 3: Analytics ETL Pipeline (Python)
+  # ============================================================
+  sonar-pipeline:
+    name: Sonar — Analytics Pipeline
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dev dependencies
+        working-directory: ETL_Layer
+        run: pip install -e ".[dev]" pytest-cov
+
+      - name: Run tests with coverage
+        working-directory: ETL_Layer
+        run: pytest tests/ --cov=src --cov-report=xml:coverage.xml -v
+
+      - name: Install dev dependencies
+        working-directory: ETL_Layer
+        run: pip install -e ".[dev]"
+
+      - name: Run tests with coverage
+        working-directory: ETL_Layer
+        run: pytest tests/ --cov=src --cov-report=xml:coverage.xml -v
+
+      - name: Run SonarQube scan
+        uses: sonarsource/sonarqube-scan-action@master
+        with:
+          projectBaseDir: ETL_Layer
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+

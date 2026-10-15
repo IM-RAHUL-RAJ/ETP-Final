@@ -1,0 +1,35 @@
+
+# Environment
+.env
+.env.example
+
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environment
+.venv/
+
+# Cache
+.cache/
+
+# Database
+*.duckdb
+
+# Pytest cache
+.pytest_cache/
+
+#vs code files
+.vscode
+
+#Cache data of fauxnance api
+data/
+
+#Analytics egg info
+sprint_04_analytics_etl.egg-info/
+
+
+pytest_output.txt
+*.txt
+
+duckdb

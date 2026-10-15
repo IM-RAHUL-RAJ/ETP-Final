@@ -1,0 +1,231 @@
+%%{init: {
+  "layout": "elk",
+  "elk": {
+    "edgeRouting": "ORTHOGONAL"
+  }
+}}%%
+classDiagram
+    direction LR
+
+    class Client {
+        -Long id
+        -String clientRef
+        -String name
+        -String email
+        -String passwordHash
+        -String phone
+        -Date dateOfBirth
+        -Gender gender
+        -ClientStatus status
+        +register()
+        +updateProfile()
+        +signIn()
+    }
+
+    class Account {
+        -Long id
+        -String accountRef
+        -Long clientId
+        -AccountType accountType
+        -String currency
+        -BigDecimal cashBalance
+        -AccountStatus status
+        -Long version
+        -DateTime createdAt
+        -DateTime suspendedAt
+        -DateTime closedAt
+        -DateTime updatedAt
+        +deposit(amount) : String
+        +withdraw(amount) : String
+        +suspend() : void
+        +close() : void
+        +isActive() : Boolean
+    }
+
+    class AccountPreference {
+        -Long id
+        -Long accountId
+        -RiskProfile riskProfile
+        -String investmentGoals
+        -String[] preferredSectors
+        -DateTime createdAt
+        +createPreference() : Boolean
+        +editPreference() : Boolean
+        +deletePreference() : Boolean
+    }
+
+    class Portfolio {
+        -Long id
+        -Long accountId
+        -String name
+        -Decimal currentValue
+        -DateTime createdAt
+        -DateTime updatedAt
+        +recalculateValue()
+        +createPortfolio() : Long
+        +editPortfolio() : Boolean
+    }
+
+    class PortfolioHolding {
+        -Long id
+        -Long portfolioId
+        -Long instrumentId
+        -int quantity
+        -Decimal avgPrice
+        -DateTime updatedAt
+        +updateAveragePrice(qty, price) : Boolean
+        +createPortfolioHolding(instrumentId, quantity) : Long
+    }
+
+    class Instrument {
+        -Long id
+        -String symbol
+        -String exchange
+        -String name
+        -AssetClass assetClass
+        -String currency
+        -bool isTradable
+        -DateTime stoppedAt
+        +isTradable() : Boolean
+        +getSymbol() : String
+    }
+
+   class OrderService {
+    -OrderValidator validator
+    -OrderExecutor executor
+
+    +createOrder(Order order) : Long
+    +submitOrder(Order order) : Transaction
+}
+
+    class Order {
+        -Long id
+        -Long accountId
+        -Long instrumentId
+        -String idempotencyKey
+        -OrderSide type
+        -int quantity
+        -BigDecimal limitPrice
+        -OrderStatus status
+        -DateTime createdAt
+        -DateTime terminalAt
+        +submit() : Long
+        +cancel() : Boolean
+        +checkStatus() : Boolean
+    }
+
+    
+
+    class OrderValidator {
+        +validate(Order) : Boolean
+    }
+
+
+    class Transaction {
+        -Long id
+        -Long orderId
+        -int quantity
+        -BigDecimal executedPrice
+        -TransactionStatus status
+        -DateTime executedAt
+        +getStatus() : TransactionStatus
+        +getHistory() : List~Transaction~
+    }
+
+    class OrderExecution {
+        +execute(Order) : Transaction
+    }
+
+    %% Enums
+
+    class Gender {
+        <<enumeration>>
+        MALE
+        FEMALE
+        OTHER
+    }
+
+    class ClientStatus {
+        <<enumeration>>
+        ACTIVE
+        DORMANT
+        CLOSED
+    }
+
+    class AccountType {
+        <<enumeration>>
+        INDIAN_EQUITY
+        US_EQUITY
+        FOREX
+        CRYPTO
+    }
+
+    class AccountStatus {
+        <<enumeration>>
+        ACTIVE
+        SUSPENDED
+        CLOSED
+    }
+
+    class AssetClass {
+        <<enumeration>>
+        US_EQUITY
+        INDIAN_EQUITY
+        FX
+        CRYPTO
+    }
+
+    class OrderSide {
+        <<enumeration>>
+        BUY
+        SELL
+    }
+
+    class OrderStatus {
+        <<enumeration>>
+        NEW
+        FILLED
+        CANCELLED
+        REJECTED
+    }
+
+    class TransactionStatus {
+        <<enumeration>>
+        EXECUTED
+        FAILED
+    }
+
+    class RiskProfile {
+        <<enumeration>>
+        CONSERVATIVE
+        MODERATE
+        AGGRESSIVE
+    }
+
+    %% Relationships
+
+    OrderExecution ..> Order : executes
+    OrderValidator ..> Order : validates
+
+    Client "1" *-- "many" Account
+    Account "1" *-- "many" AccountPreference
+    Account "1" *-- "1" Portfolio
+    Portfolio "1" *-- "many" PortfolioHolding
+    Order "1" *-- "1" Transaction
+
+    PortfolioHolding "many" o-- "1" Instrument
+    Order "many" o-- "1" Instrument
+
+    %% Enum associations
+    Client --> Gender
+    Client --> ClientStatus
+    Account --> AccountType
+    Account --> AccountStatus
+    AccountPreference --> RiskProfile
+    Instrument --> AssetClass
+    Order --> OrderSide
+    Order --> OrderStatus
+    Transaction --> TransactionStatus
+
+   OrderService --> OrderValidator : uses
+   OrderService --> OrderExecution : uses

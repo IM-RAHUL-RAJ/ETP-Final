@@ -1,0 +1,84 @@
+:host {
+  display: block;
+}
+
+.page {
+  display: grid;
+  gap: 10px;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1,
+h2 {
+  font-size: 15px;
+}
+
+.card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background-color: var(--surface);
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.table-card {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  padding: 8px;
+}
+
+th {
+  color: var(--muted);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+form {
+  display: grid;
+  gap: 10px;
+}
+
+.field {
+  display: grid;
+  gap: 4px;
+}
+
+input,
+select {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 12px;
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+.primary {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  background-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.muted {
+  color: var(--muted);
+}
+

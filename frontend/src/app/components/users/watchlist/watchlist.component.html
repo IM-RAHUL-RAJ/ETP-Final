@@ -1,0 +1,136 @@
+<section class="page" data-testid="watchlist" (document:keydown.escape)="close()">
+  <header class="head">
+    <div>
+      <h1>Watchlist</h1>
+      <p class="muted">Instruments you keep an eye on. Tap one to see its chart.</p>
+    </div>
+
+    <div class="adder">
+      <app-select class="adder__select" [options]="addOptions()" [value]="pick()" (valueChange)="pick.set($event)"
+                  [disabled]="adding() || addable().length === 0"
+                  [placeholder]="addable().length === 0 ? 'Everything is on your watchlist' : 'Add an instrument'"
+                  searchPlaceholder="Search by symbol or name" emptyText="No instrument matches." testId="watch-pick" ariaLabel="Add an instrument" />
+      <button type="button" class="primary" (click)="add()" [disabled]="!pick() || adding()" data-testid="watch-add">
+        <app-icon name="plus" [size]="18" />
+        @if (adding()) { Adding... } @else { Add }
+      </button>
+    </div>
+  </header>
+
+  @if (error()) {
+    <div class="banner error" role="alert" data-testid="watchlist-error">
+      {{ error() }}
+      <button type="button" class="secondary" (click)="load()">Try again</button>
+    </div>
+  }
+  @if (actionError()) {
+    <div class="banner error" role="alert">{{ actionError() }}</div>
+  }
+
+  <!-- The chart and details open on top of the list, with the companion cheering you on. -->
+  @if (selectedCard(); as card) {
+    <article class="detail card" data-testid="watch-overlay" [attr.aria-label]="card.symbol + ' details'">
+      <div data-testid="watch-card">
+        <div class="detail__head">
+          <app-mascot class="detail__mascot" [action]="card.quote ? (dir(card) === 'down' ? 'think' : 'dance') : 'wave'" [size]="84" [interactive]="false" />
+          <div class="detail__id">
+            <h2>{{ card.symbol }}</h2>
+            <p class="muted">{{ card.name }}</p>
+          </div>
+          @if (card.quote; as q) {
+            <div class="detail__price" data-testid="watch-quote" [attr.data-dir]="dir(card)">
+              <strong class="display">{{ q.price | number: '1.2-2' }}</strong>
+              <span class="pill-ccy">{{ q.currency ?? card.currency }}</span>
+              @if (q.change !== null) {
+                <span class="change" [attr.data-dir]="dir(card)">
+                  {{ q.change > 0 ? '+' : '' }}{{ q.change | number: '1.2-2' }}
+                  @if (q.changePercent !== null) { ({{ q.changePercent > 0 ? '+' : '' }}{{ q.changePercent | number: '1.2-2' }}%) }
+                </span>
+              }
+            </div>
+          } @else {
+            <p class="muted detail__price" data-testid="watch-quote-waiting">Waiting for the first price.</p>
+          }
+          <button type="button" class="icon-btn" (click)="close()" aria-label="Close details" data-tip="Close" data-tip-end data-testid="watch-close">
+            <app-icon name="close" />
+          </button>
+        </div>
+
+        <app-candle-chart [symbol]="card.symbol" [currency]="card.currency" />
+
+        <div class="detail__foot">
+          <dl class="facts">
+            <div><dt>You hold</dt><dd class="tabular">{{ card.held }}</dd></div>
+            <div>
+              <dt>Last fill</dt>
+              <dd class="tabular">
+                @if (card.lastFillHome !== null) { {{ card.lastFillHome | number: '1.2-2' }} <span class="pill-ccy">{{ home.homeCurrency() }}</span> }
+                @else { <span class="muted">None yet</span> }
+              </dd>
+            </div>
+          </dl>
+          <div class="detail__actions">
+            <a class="button buy" [routerLink]="['/order-ticket']" [queryParams]="{ symbol: card.symbol, side: 'BUY' }" data-testid="watch-buy">Buy</a>
+            <a class="button sell" [routerLink]="['/order-ticket']" [queryParams]="{ symbol: card.symbol, side: 'SELL' }" data-testid="watch-sell">Sell</a>
+            <a class="button ghosted" [routerLink]="['/alerts']" [queryParams]="{ symbol: card.symbol }" data-testid="watch-alert">
+              <app-icon name="bell" [size]="18" /> Price alert
+            </a>
+          </div>
+        </div>
+      </div>
+    </article>
+  }
+
+  @if (loading()) {
+    <article class="card" aria-busy="true" aria-label="Loading watchlist">
+      <span class="skeleton short"></span><span class="skeleton"></span><span class="skeleton"></span>
+    </article>
+  } @else if (!error()) {
+    @if (cards().length === 0) {
+      <article class="card" data-testid="watchlist-empty">
+        <app-empty-state title="Your watchlist is empty" message="Add an instrument above to follow it. Its chart and price show up here.">
+          <a class="button" routerLink="/order-ticket">Browse instruments</a>
+        </app-empty-state>
+      </article>
+    } @else {
+      <article class="card list" data-testid="watch-table">
+        <ul class="rows stagger" aria-label="Watchlist">
+          @for (card of cards(); track card.symbol) {
+            <li class="row" [class.row--open]="selected() === card.symbol" [attr.data-dir]="dir(card)" tabindex="0" role="button"
+                [attr.aria-label]="'Show chart for ' + card.symbol" (click)="open(card.symbol)" (keydown.enter)="open(card.symbol)"
+                data-testid="watch-row">
+              <span class="row__badge" aria-hidden="true">{{ card.symbol.slice(0, 2) }}</span>
+              <span class="row__id">
+                <strong>{{ card.symbol }}</strong>
+                <span class="muted">{{ card.name }}</span>
+              </span>
+              <span class="row__price">
+                @if (card.quote; as q) {
+                  <strong class="tabular">{{ q.price | number: '1.2-2' }}</strong>
+                  <span class="muted tabular">
+                    {{ q.bid | number: '1.2-2' }} / {{ q.ask | number: '1.2-2' }}
+                    @if (q.priceHome !== null) { &middot; {{ q.priceHome | number: '1.2-2' }} {{ home.homeCurrency() }} }
+                  </span>
+                } @else {
+                  <span class="muted">&mdash;</span>
+                }
+              </span>
+              <span class="row__change" [attr.data-dir]="dir(card)">
+                @if (card.quote?.changePercent !== null && card.quote?.changePercent !== undefined) {
+                  {{ card.quote!.changePercent! > 0 ? '+' : '' }}{{ card.quote!.changePercent | number: '1.2-2' }}%
+                } @else {
+                  &mdash;
+                }
+              </span>
+              <button type="button" class="icon-btn danger" (click)="$event.stopPropagation(); remove(card.symbol)"
+                      [disabled]="busySymbol() !== null" [attr.aria-label]="'Remove ' + card.symbol" data-tip="Remove" data-tip-end
+                      data-testid="watch-row-remove">
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10h10" /></svg>
+              </button>
+            </li>
+          }
+        </ul>
+      </article>
+    }
+  }
+</section>

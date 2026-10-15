@@ -1,0 +1,224 @@
+<section class="page" data-testid="order-history">
+  <div class="header">
+    <div>
+      <h1>Orders, newest first</h1>
+      <p class="muted">Every order for your account, rejections included.</p>
+    </div>
+    <div class="header__actions">
+      @if (orders().length > 0) {
+        <app-download-menu [filteredCount]="visibleOrders().length" [totalCount]="orders().length"
+                           [hasCharts]="true" [busy]="exporting()" (download)="download($event)" />
+      }
+      @if (orders().length > 0) {
+        <button type="button" class="icon-btn filter-toggle" [class.active]="filtersOpen()" (click)="toggleFilters()"
+                [attr.aria-expanded]="filtersOpen()" aria-label="Filters" data-tip="Filters" data-tip-below data-testid="filters-toggle">
+          <app-icon name="filter" />
+          @if (activeColumnFilters() > 0) {
+            <span class="filter-toggle__count" data-testid="filters-count">{{ activeColumnFilters() }}</span>
+          }
+        </button>
+      }
+      <button type="button" class="icon-btn refresh" (click)="refreshOrders()" [disabled]="refreshing()"
+              aria-label="Refresh" data-tip="Refresh" data-tip-below data-tip-end data-testid="refresh-orders">
+        <app-icon name="refresh" [class.spin]="refreshing()" />
+      </button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="banner error" role="alert" data-testid="blotter-error">{{ error() }}</div>
+  }
+
+  @if (actionError()) {
+    <div class="banner error" role="alert" data-testid="cancel-error">{{ actionError() }}</div>
+  }
+
+  @if (notice(); as message) {
+    <div class="banner success notice" role="status" data-testid="cancel-notice">
+      <span>{{ message }}</span>
+      <button type="button" class="notice__close" (click)="dismissNotice()" aria-label="Dismiss">&times;</button>
+    </div>
+  }
+
+  @if (loading()) {
+    <article class="card" aria-busy="true" aria-label="Loading orders">
+      <span class="skeleton"></span>
+      <span class="skeleton"></span>
+      <span class="skeleton"></span>
+      <span class="skeleton"></span>
+    </article>
+  } @else if (orders().length === 0 && !error()) {
+    <article class="card" data-testid="blotter-empty">
+      <app-empty-state title="No orders yet" message="Your orders show up here, including the ones that were turned down. Start with your first.">
+        <a class="button" routerLink="/order-ticket">Place an order</a>
+      </app-empty-state>
+    </article>
+  } @else if (orders().length > 0) {
+    @if (filtersOpen()) {
+    <div class="filters" role="group" aria-label="Filter orders by status">
+      @for (option of filters(); track option.value) {
+        <button type="button" class="chip" [class.active]="filter() === option.value"
+                [attr.aria-pressed]="filter() === option.value"
+                (click)="setFilter(option.value)" [attr.data-testid]="'filter-' + option.value">
+          {{ option.label }} <span class="chip__count">{{ option.count }}</span>
+        </button>
+      }
+    </div>
+
+    <div class="date-panel" role="group" aria-label="Filter orders by date range">
+      <div class="date-panel__head">
+        <strong>Placed range</strong>
+        <div class="date-panel__actions">
+          <span class="muted">{{ dateRangeLabel() }}</span>
+          <button type="button" class="clear-filters-btn" (click)="clearFilters()"
+                  [disabled]="!hasActiveFilters()" data-testid="clear-filters">
+            {{ clearFiltersLabel() }}
+          </button>
+        </div>
+      </div>
+      <div class="date-panel__inputs">
+        <label>
+          <span class="sr-only">From date</span>
+          <span class="muted">From</span>
+          <input type="date" aria-label="Filter from placed date" [value]="fromDateFilter()"
+                 (input)="fromDateFilter.set($any($event.target).value)" data-testid="date-range-from" />
+        </label>
+        <label>
+          <span class="sr-only">To date</span>
+          <span class="muted">To</span>
+          <input type="date" aria-label="Filter to placed date" [value]="toDateFilter()"
+                 (input)="toDateFilter.set($any($event.target).value)" data-testid="date-range-to" />
+        </label>
+      </div>
+      <div class="date-panel__presets">
+        @for (preset of datePresets; track preset.id) {
+          <button type="button" class="date-preset" [class.active]="activeDatePreset() === preset.id"
+                  (click)="applyDatePreset(preset.id)" [attr.data-testid]="'date-preset-' + preset.id">
+            {{ preset.label }}
+          </button>
+        }
+      </div>
+    </div>
+    }
+
+    <article class="card table-card">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Placed</th>
+              <th scope="col">Symbol</th>
+              <th scope="col">Side</th>
+              <th scope="col" class="num">Qty</th>
+              <th scope="col" class="num">Limit price @if (home.homeCurrency()) { <span class="ccy">{{ home.homeCurrency() }}</span> }</th>
+              <th scope="col" class="num">Executed at @if (home.homeCurrency()) { <span class="ccy">{{ home.homeCurrency() }}</span> }</th>
+              <th scope="col">Status</th>
+              <th scope="col" class="act"><span class="sr-only">Actions</span></th>
+            </tr>
+            @if (filtersOpen()) {
+            <tr class="filter-row" data-testid="column-filters">
+              <th>
+                <span class="muted">Date range above</span>
+              </th>
+              <th>
+                <input type="search" placeholder="Symbol" aria-label="Filter by symbol" autocomplete="off"
+                       [value]="symbolFilter()" (input)="symbolFilter.set($any($event.target).value)"
+                       data-testid="col-filter-symbol" />
+              </th>
+              <th>
+                <select aria-label="Filter by side" [value]="sideFilter()"
+                        (change)="sideFilter.set($any($event.target).value)" data-testid="col-filter-side">
+                  <option value="">All</option>
+                  <option value="BUY">Buy</option>
+                  <option value="SELL">Sell</option>
+                </select>
+              </th>
+              <th class="num">
+                <input type="search" placeholder="e.g. >100" aria-label="Filter by quantity" autocomplete="off"
+                       [value]="quantityFilter()" (input)="quantityFilter.set($any($event.target).value)"
+                       data-testid="col-filter-quantity" />
+              </th>
+              <th class="num">
+                <input type="search" placeholder="e.g. <=50" aria-label="Filter by limit price" autocomplete="off"
+                       [value]="priceFilter()" (input)="priceFilter.set($any($event.target).value)"
+                       data-testid="col-filter-price" />
+              </th>
+              <th class="num">
+                <input type="search" placeholder="e.g. >=10" aria-label="Filter by executed price" autocomplete="off"
+                       [value]="executedFilter()" (input)="executedFilter.set($any($event.target).value)"
+                       data-testid="col-filter-executed" />
+              </th>
+              <th>
+                <select aria-label="Filter by status" [value]="filter()"
+                        (change)="setFilter($any($event.target).value)" data-testid="col-filter-status">
+                  <option value="ALL">All</option>
+                  <option value="NEW">Working</option>
+                  <option value="FILLED">Filled</option>
+                  <option value="REJECTED">Rejected</option>
+                  <option value="CANCELLED">Cancelled</option>
+                </select>
+              </th>
+              <th class="act"></th>
+            </tr>
+            }
+          </thead>
+          <tbody>
+            @for (order of visibleOrders(); track order.orderId; let i = $index) {
+              <tr [style.animation-delay.ms]="i * 40" data-testid="order-row"
+                  [attr.data-order-id]="order.orderId" [attr.data-status]="order.status">
+                <td class="tabular" [attr.title]="order.orderId">
+                  {{ order.createdOn | date: 'd MMM y, HH:mm' }}
+                </td>
+                <td><strong>{{ order.symbol }}</strong></td>
+                <td>
+                  <span class="side" [class.side--sell]="order.side === 'SELL'">
+                    {{ order.side === 'BUY' ? 'Buy' : 'Sell' }}
+                  </span>
+                </td>
+                <td class="tabular num">{{ order.quantity }}</td>
+                <td class="tabular num">
+                  @if (order.price !== null) {
+                    {{ order.price | number: '1.2-2' }}
+                  } @else {
+                    <span class="muted">Market</span>
+                  }
+                </td>
+                <td class="tabular num">
+                  @if (order.executedPrice !== null) {
+                     <span>{{ order.executedPrice | number: '1.2-2' }}</span>
+                  } @else {
+                    <span class="muted">&mdash;</span>
+                  }
+                </td>
+                <td data-testid="order-status"><app-status-badge [status]="order.status" /></td>
+                <td class="act">
+                  @if (order.status === 'NEW') {
+                    @if (confirmingId() === order.orderId) {
+                      <span class="confirm">
+                        <span class="confirm__ask">Cancel this order?</span>
+                        <button type="button" class="mini yes-cancel" (click)="confirmCancel(order)"
+                                [disabled]="cancellingId() !== null" data-testid="confirm-cancel">
+                          @if (cancellingId() === order.orderId) { Cancelling... } @else { Yes, cancel }
+                        </button>
+                        <button type="button" class="mini keep" (click)="keepOrder()"
+                                [disabled]="cancellingId() !== null" data-testid="keep-order">Keep it</button>
+                      </span>
+                    } @else {
+                      <button type="button" class="cancel-btn" (click)="askCancel(order.orderId)"
+                              [attr.aria-label]="'Cancel ' + order.symbol + ' order'" data-testid="cancel-order">
+                        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.5 5.5l9 9M14.5 5.5l-9 9" /></svg>
+                        Cancel
+                      </button>
+                    }
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr class="none-row">
+                <td colspan="8"><span class="muted">No orders match these filters.</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+    </article>
+  }
+</section>

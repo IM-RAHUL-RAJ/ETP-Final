@@ -1,0 +1,65 @@
+<div class="activity" data-testid="activity-chart">
+  <p class="readout" aria-live="polite">
+    @if (readout(); as day) {
+      <strong>{{ day.date | date: 'EEE d MMM' }}</strong>
+      <span>
+        {{ day.total }} {{ day.total === 1 ? 'order' : 'orders' }}
+        @if (day.total > 0) {
+          &middot;
+          @for (part of stack; track part.key) {
+            @if (day[part.key] > 0) { <span class="pip pip--{{ part.key }}">{{ day[part.key] }} {{ part.label.toLowerCase() }}</span> }
+          }
+        }
+      </span>
+    } @else {
+      <span class="muted">{{ totalOrders() }} {{ totalOrders() === 1 ? 'order' : 'orders' }} in the last {{ days().length }} days</span>
+    }
+  </p>
+
+  <div class="plot">
+    <svg [attr.viewBox]="'0 0 ' + width + ' ' + height" role="img"
+         [attr.aria-label]="'Orders per day for the last ' + days().length + ' days, ' + totalOrders() + ' in total'">
+      <line class="grid" x1="0" [attr.x2]="width" [attr.y1]="baseline" [attr.y2]="baseline" />
+      <line class="grid grid--dash" x1="0" [attr.x2]="width" y1="14" y2="14" />
+      <!--<text class="axis" x="0" y="10">{{ peak() }}</text>-->
+
+      @for (bar of bars(); track bar.index) {
+        <g class="col" [class.on]="hovered() === bar.index">
+          <rect class="hit" [attr.x]="bar.slotX" y="0" [attr.width]="bar.slot" [attr.height]="height"
+                rx="6" />
+          @for (segment of bar.segments; track segment.key) {
+            <rect
+              class="seg seg--{{ segment.key }}"
+              [attr.x]="bar.x"
+              [attr.y]="segment.y"
+              [attr.width]="bar.width"
+              [attr.height]="segment.height"
+              rx="3"
+              [style.animation-delay.ms]="bar.index * 35"
+            />
+          }
+          @if (bar.showLabel) {
+            <text class="axis" [attr.x]="bar.x + bar.width / 2" [attr.y]="height - 8" text-anchor="middle">
+              {{ bar.day.date | date: 'd' }}
+            </text>
+          }
+          <rect class="cover" [attr.x]="bar.slotX" y="0" [attr.width]="bar.slot" [attr.height]="height"
+                tabindex="0" role="img"
+                [attr.aria-label]="(bar.day.date | date: 'd MMMM') + ': ' + bar.day.total + ' orders'"
+                (mouseenter)="point(bar.index)" (mouseleave)="point(null)"
+                (focus)="point(bar.index)" (blur)="point(null)" />
+        </g>
+      }
+    </svg>
+
+    @if (totalOrders() === 0) {
+      <p class="none">No orders in this period yet.</p>
+    }
+  </div>
+
+  <ul class="key">
+    @for (part of stack; track part.key) {
+      <li><span class="dot dot--{{ part.key }}"></span>{{ part.label }}</li>
+    }
+  </ul>
+</div>

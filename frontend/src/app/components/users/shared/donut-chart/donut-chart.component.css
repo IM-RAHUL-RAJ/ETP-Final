@@ -1,0 +1,136 @@
+:host {
+  display: block;
+}
+
+.donut {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 16px 24px;
+}
+
+.donut__ring {
+  position: relative;
+  width: 168px;
+  height: 168px;
+  flex: none;
+}
+
+svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+circle {
+  fill: none;
+  stroke-width: 14;
+}
+
+.track {
+  stroke: var(--bg);
+}
+
+.arc {
+  stroke-linecap: butt;
+  cursor: pointer;
+  outline: none;
+  transition:
+    stroke-width 200ms var(--ease),
+    opacity 200ms ease;
+  animation: draw 900ms var(--ease) both;
+}
+
+.arc.active,
+.arc:focus-visible {
+  stroke-width: 18;
+}
+
+.arc.dim {
+  opacity: 0.3;
+}
+
+.donut__centre {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+.donut__label,
+.donut__sub {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.donut__value {
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  animation: swap 220ms var(--ease);
+}
+
+.legend {
+  display: grid;
+  gap: 2px;
+  min-width: 150px;
+  max-width: 260px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  flex: 1;
+}
+
+.legend li {
+  display: grid;
+  grid-template-columns: 12px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: default;
+  animation: rowEnter 320ms var(--ease) both;
+  transition: background-color 160ms ease;
+}
+
+.legend li.on,
+.legend li:hover {
+  background-color: var(--bg);
+}
+
+.swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.legend__name {
+  font-weight: 600;
+}
+
+.legend__share {
+  color: var(--muted);
+}
+
+@keyframes draw {
+  from {
+    stroke-dasharray: 0 400;
+  }
+}
+
+@keyframes swap {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes rowEnter {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+}

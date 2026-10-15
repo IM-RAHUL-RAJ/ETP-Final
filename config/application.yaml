@@ -1,0 +1,43 @@
+# Shared configuration of the Enterprise Trading Platform (deployment PDF: "Configuration - application.yml").
+#
+# All services share this file's values for the environment-specific settings (host, port, credentials).
+# The same values are carried into the running services through the .env at the repository root
+# (see .env.example); `npm run validate:config` checks that this file, .env and .env.example agree.
+# Secrets (passwords, keys, tokens) are never written here: they are named by the environment
+# variable that holds them.
+
+frontend:
+  url: http://localhost
+  port: 4200
+
+services:
+  auth:
+    url: http://localhost
+    port: 3000
+    api_url: http://localhost:3000        # /auth/login, /auth/register, /auth/refresh, /auth/me
+    health_url: http://localhost:3000/health
+  order:
+    url: http://localhost
+    port: 8081
+    api_url: http://localhost:8081/api/v1  # the Trade REST API the frontend calls
+    health_url: http://localhost:8081/actuator/health
+  executor:
+    url: http://localhost
+    port: 8082
+    health_url: http://localhost:8082/actuator/health
+
+database:
+  host: localhost
+  port: 5432
+  name: trading_system_db
+  user: postgres
+  password: ${DB_PASSWORD}                # environment variable, never the value
+  schemas:
+    trade: trade                          # clients, accounts, orders, ... (order and executor services)
+    auth: auth                            # auth_users, refresh_tokens (auth service)
+
+kafka:
+  host: kafka                             # broker on the Docker network
+  port: 29092
+  # Services started directly on a machine (no Docker) use KAFKA_BOOTSTRAP_SERVERS from .env instead:
+  # the broker on the Linux VM (<vm-ip>:9092) or on this machine (localhost:9092).

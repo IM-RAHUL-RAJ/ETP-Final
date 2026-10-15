@@ -1,0 +1,224 @@
+openapi: 3.1.0
+
+info:
+  title: Watchlists and price alerts
+  version: 1.0.0
+  summary: Price alerts on instruments, evaluated against the market-data stream.
+  description: |
+    Sprint 10 extension, built as the `com.capstone.etp.alerts` package inside the Trade REST API.
+
+    ## The watchlist
+
+    A customer's watchlist, and the live price beside each entry, are the account's existing watchlist
+    routes (`GET|PUT|DELETE /api/v1/accounts/{id}/watchlist[/{symbol}]` and
+    `GET /api/v1/accounts/{id}/watchlist/quotes`, see `trade-api.yaml`). A watchlist entry is a reference
+    to an instrument, not a position, so a customer can watch something they have never traded.
+    This module is the **alerts** half: thresholds a customer wants to be told about.
+
+    ## What "crossed" means
+
+    * `ABOVE` fires on the first quote whose price is **at or above** the threshold.
+    * `BELOW` fires on the first quote whose price is **at or below** it.
+    * A quote the provider flagged `stale` is ignored: it is not evidence the market crossed anything.
+    * An alert is **refused at creation** if the current (non-stale) price has already crossed the level,
+      so "crossed" always means the price moved through the level after the customer asked.
+
+    ## What happens next
+
+    The alert **deactivates itself**: `ACTIVE` becomes `TRIGGERED` once, in a guarded update
+    (`WHERE status = 'ACTIVE'`), so a redelivered quote, a rebalance, a second instance or a cancel racing
+    the quote cannot fire it twice. Firing on every quote past the level would send a customer dozens of
+    messages a minute, so it does not.
+
+    ## Delivery
+
+    A fired alert is handed to **notifications** through the in-process Java interface
+    `com.capstone.etp.notifications.AlertDelivery`. It is never written to a log in place of a message.
+    This module never asks for a channel: notifications resolves it through preferences.
+
+    `deliveryState` says what happened to the hand-over, so a customer looking at a fired alert can tell
+    whether they were told:
+
+    | deliveryState | meaning |
+    |---|---|
+    | `NONE` | the alert has not fired |
+    | `PENDING_HANDOVER` | fired; the hand-over is not confirmed yet |
+    | `HANDED_OVER` | notifications recorded it; the notification's own status says whether it was sent |
+    | `HANDOVER_FAILED` | notifications could not record it; retried with a limit; the alert is kept and is not removable |
+
+    ## Cap
+
+    An account may hold at most **25** alerts (any status), so one account cannot fill the table and make
+    the quote consumer, which runs in the process that places orders, do work proportional to it. The
+    count and the insert are one SQL statement, so concurrent requests cannot slip past it. Finished alerts
+    are removed by the customer (`DELETE`), which is how they make room.
+
+    ## Access control
+
+    Every route compares the verified token's `accountId` claim with `{accountId}` and every query is keyed
+    on that account, never on an identifier from the body. An alert id of another account is answered
+    exactly like one that does not exist (`404 ALR-404`).
+
+servers:
+  - url: http://localhost:8081
+
+tags:
+  - name: Alerts
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/accounts/{accountId}/alerts:
+    parameters:
+      - $ref: '#/components/parameters/AccountIdPath'
+    get:
+      tags: [Alerts]
+      operationId: listAlerts
+      summary: The account's alerts, newest first
+      responses:
+        '200':
+          description: Alerts with their state.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Alert' }
+        '401': { $ref: '#/components/responses/Unauthorised' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Alerts]
+      operationId: createAlert
+      summary: Create an alert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateAlert' }
+      responses:
+        '201':
+          description: Created.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Alert' }
+        '401': { $ref: '#/components/responses/Unauthorised' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404':
+          description: Unknown instrument.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example: { errorCode: INS-404, message: 'Instrument not found: UNKNOWN_SYMBOL' }
+        '409':
+          description: The account already holds the maximum number of alerts.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example: { errorCode: ALR-409, message: You can keep at most 25 alerts. Remove one to add another }
+        '422': { $ref: '#/components/responses/InvalidInput' }
+
+  /api/v1/accounts/{accountId}/alerts/{alertId}:
+    parameters:
+      - $ref: '#/components/parameters/AccountIdPath'
+      - name: alertId
+        in: path
+        required: true
+        schema: { type: integer, format: int64 }
+    delete:
+      tags: [Alerts]
+      operationId: removeAlert
+      summary: Cancel an active alert, or remove a finished one
+      description: |
+        An `ACTIVE` alert becomes `CANCELLED` (and can no longer fire). A `TRIGGERED` or `CANCELLED` alert is
+        removed. A fired alert whose hand-over is still unresolved is kept and answers `409 ALR-409`, because
+        removing it would hide that the customer may not have been told.
+      responses:
+        '200':
+          description: The alert as it stood after the call.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Alert' }
+        '401': { $ref: '#/components/responses/Unauthorised' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404':
+          description: No such alert on this account.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example: { errorCode: ALR-404, message: Alert not found }
+        '409':
+          description: Fired and not yet handed over for delivery.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+
+  parameters:
+    AccountIdPath:
+      name: accountId
+      in: path
+      required: true
+      schema: { type: integer, format: int64, minimum: 1 }
+
+  responses:
+    Unauthorised:
+      description: Missing, malformed, expired or wrongly signed token.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { errorCode: AUTH-401, message: Unauthorised }
+    Forbidden:
+      description: The token does not hold this account.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { errorCode: ACC-403, message: Sorry you dont have access to this account }
+    InvalidInput:
+      description: |
+        The body failed validation, carried a field this contract does not define (including an
+        `accountId`), or asked for a level the price has already crossed.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { errorCode: VAL-422, message: Invalid input }
+
+  schemas:
+    CreateAlert:
+      type: object
+      additionalProperties: false
+      required: [symbol, direction, threshold]
+      properties:
+        symbol:
+          type: string
+          maxLength: 20
+          pattern: '^[A-Za-z0-9.:^=\-]+$'
+        direction: { type: string, enum: [ABOVE, BELOW] }
+        threshold:
+          type: number
+          exclusiveMinimum: 0
+          description: Up to 14 integer digits and 4 decimals.
+    Alert:
+      type: object
+      required: [id, symbol, direction, threshold, status, deliveryState, createdAt]
+      properties:
+        id: { type: integer, format: int64 }
+        symbol: { type: string }
+        direction: { type: string, enum: [ABOVE, BELOW] }
+        threshold: { type: number }
+        status: { type: string, enum: [ACTIVE, TRIGGERED, CANCELLED] }
+        deliveryState: { type: string, enum: [NONE, PENDING_HANDOVER, HANDED_OVER, HANDOVER_FAILED] }
+        triggeredPrice: { type: [number, 'null'] }
+        triggeredAt: { type: [string, 'null'], format: date-time }
+        createdAt: { type: string, format: date-time }
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [errorCode, message]
+      properties:
+        errorCode:
+          type: string
+          enum: [ACC-403, AUTH-401, INS-404, VAL-422, ALR-404, ALR-409]
+        message: { type: string }

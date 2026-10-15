@@ -1,0 +1,325 @@
+openapi: 3.1.0
+
+info:
+  title: Sprint 10 UI enhancements
+  version: 1.0.0
+  summary: Alert operators, switch and trigger history; inbox filters; mascot and notification choices; funds; candles; portfolio value history.
+  description: |
+    Added by the Sprint 10 UI enhancement work, inside the Trade REST API. It **extends** `alerts-api.yaml`,
+    `preferences-api.yaml` and `portfolio-api.yaml` and **supersedes them where they differ**. The reasoning is in
+    `decision-log/0014` to `0018`.
+
+    ## What changed in alerts (supersedes `alerts-api.yaml`)
+
+    * A condition is `condition` (`>`, `>=`, `<`, `<=`, `==`) and `price`. `direction` and `threshold` are no
+      longer in the request or the response; `ABOVE` and `BELOW` live on only as a derived database column.
+    * An alert has `enabled`. Only an `ACTIVE` and `enabled` alert can fire.
+    * Switching a fired alert on, or editing it, arms it again; each firing is kept as history.
+    * `DELETE` removes the alert and its history (there is no `CANCELLED` result any more).
+
+    Errors, the 25-alert cap, the `already reached` refusal and account isolation are unchanged.
+
+servers:
+  - url: http://localhost:8081
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/accounts/{accountId}/alerts:
+    parameters: [{ $ref: '#/components/parameters/AccountId' }]
+    post:
+      operationId: createAlert
+      summary: Create an alert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateAlert' }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Alert' } } } }
+        '409': { description: Cap reached (ALR-409) }
+        '422': { description: Invalid input, or the condition already holds (VAL-422) }
+
+  /api/v1/accounts/{accountId}/alerts/{alertId}:
+    parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - { name: alertId, in: path, required: true, schema: { type: integer, format: int64 } }
+    put:
+      operationId: updateAlert
+      summary: Change an alert's instrument, condition, price or switch
+      description: Any field may be left out; what is present changes. Arms a fired alert again.
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/UpdateAlert' } } }
+      responses:
+        '200': { description: The alert, content: { application/json: { schema: { $ref: '#/components/schemas/Alert' } } } }
+        '404': { description: Not found, or not yours (ALR-404) }
+        '409': { description: Fired and still being handed over (ALR-409) }
+        '422': { description: Invalid input, or the condition already holds (VAL-422) }
+    delete:
+      operationId: deleteAlert
+      summary: Remove an alert and its history
+      responses:
+        '200': { description: The alert as it was, content: { application/json: { schema: { $ref: '#/components/schemas/Alert' } } } }
+        '404': { description: Not found, or not yours (ALR-404) }
+        '409': { description: Fired and still being handed over (ALR-409) }
+
+  /api/v1/accounts/{accountId}/alerts/{alertId}/enabled:
+    parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - { name: alertId, in: path, required: true, schema: { type: integer, format: int64 } }
+    put:
+      operationId: setAlertEnabled
+      summary: Switch an alert on or off
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [enabled], additionalProperties: false, properties: { enabled: { type: boolean } } }
+      responses:
+        '200': { description: The switch as the server now holds it, content: { application/json: { schema: { type: object, properties: { enabled: { type: boolean } } } } } }
+        '404': { description: Not found, or not yours (ALR-404) }
+        '409': { description: Fired and still being handed over (ALR-409) }
+
+  /api/v1/accounts/{accountId}/alerts/{alertId}/triggers:
+    parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - { name: alertId, in: path, required: true, schema: { type: integer, format: int64 } }
+    get:
+      operationId: listAlertTriggers
+      summary: Each time the alert fired, newest first (at most 100)
+      description: Creating the alert is not an event here. `notificationStatus` is where the message got to.
+      responses:
+        '200': { description: History, content: { application/json: { schema: { $ref: '#/components/schemas/AlertTriggers' } } } }
+        '404': { description: Not found, or not yours (ALR-404) }
+
+  /api/v1/accounts/{accountId}/notifications:
+    parameters: [{ $ref: '#/components/parameters/AccountId' }]
+    get:
+      operationId: listNotifications
+      summary: The inbox, optionally for one group
+      parameters:
+        - { name: type, in: query, required: false, schema: { type: string, enum: [all, price_alert, order, funds], default: all } }
+        - { name: unreadOnly, in: query, schema: { type: boolean, default: false } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+      responses:
+        '200': { description: Messages, newest first }
+        '422': { description: Unknown type (VAL-422) }
+
+  /api/v1/accounts/{accountId}/notifications/counts:
+    parameters: [{ $ref: '#/components/parameters/AccountId' }]
+    get:
+      operationId: countNotifications
+      summary: How many messages each tab holds
+      responses:
+        '200':
+          description: Counts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { all: { type: integer }, priceAlert: { type: integer }, order: { type: integer }, funds: { type: integer } }
+
+  /api/v1/accounts/{accountId}/preferences:
+    parameters: [{ $ref: '#/components/parameters/AccountId' }]
+    put:
+      operationId: updatePreferences
+      summary: Save the customer's choices (extends preferences-api.yaml)
+      description: |
+        `mascot`, `notificationsEnabled` and `notificationKinds` are optional; what is absent stays as it was.
+        `notificationKinds` takes only `ORDER_FILLED`, `ORDER_REJECTED`, `ORDER_CANCELLED`, `PRICE_ALERT`, `FUNDS`.
+        A message of a kind the customer switched off is kept in the inbox with status `SKIPPED` and not sent.
+        The response carries the same three fields. The UI no longer offers `SMS`; the server still accepts it.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [defaultAccountId, alertChannel]
+              additionalProperties: false
+              properties:
+                defaultAccountId: { type: integer, format: int64 }
+                alertChannel: { type: string, enum: [EMAIL, SMS, PUSH] }
+                mascot: { type: string, enum: [OWL, RABBIT, CAT] }
+                notificationsEnabled: { type: boolean }
+                notificationKinds: { type: array, items: { type: string, enum: [ORDER_FILLED, ORDER_REJECTED, ORDER_CANCELLED, PRICE_ALERT, FUNDS] } }
+      responses:
+        '200': { description: Saved }
+        '422': { description: Unknown mascot or kind, or a channel the profile cannot serve (VAL-422) }
+
+  /api/v1/accounts/{accountId}/funds/deposit:
+    parameters: [{ $ref: '#/components/parameters/AccountId' }]
+    post:
+      operationId: depositFunds
+      summary: Add cash (simulated)
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/FundsRequest' } } } }
+      responses:
+        '201': { description: The movement and the balance it left, content: { application/json: { schema: { $ref: '#/components/schemas/FundsMovement' } } } }
+        '403': { description: Account not active (ACC-403), or not yours }
+        '422': { description: Amount not above zero, over the per-movement cap, or unknown method (FND-422 / VAL-422) }
+
+  /api/v1/accounts/{accountId}/funds/withdraw:
+    parameters: [{ $ref: '#/components/parameters/AccountId' }]
+    post:
+      operationId: withdrawFunds
+      summary: Take cash out (simulated)
+      description: One conditional statement, so two requests cannot overdraw the account.
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/FundsRequest' } } } }
+      responses:
+        '201': { description: The movement, content: { application/json: { schema: { $ref: '#/components/schemas/FundsMovement' } } } }
+        '403': { description: Account not active (ACC-403), or not yours }
+        '422': { description: More than the balance (FND-422), over the cap, or invalid }
+
+  /api/v1/accounts/{accountId}/funds:
+    parameters: [{ $ref: '#/components/parameters/AccountId' }]
+    get:
+      operationId: listFunds
+      summary: Recent cash movements, newest first
+      parameters: [{ name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }]
+      responses:
+        '200': { description: Movements, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/FundsMovement' } } } } }
+
+  /api/v1/quotes/candles/{symbol}:
+    parameters:
+      - { name: symbol, in: path, required: true, schema: { type: string, pattern: '^[A-Za-z0-9.:^=-]{1,20}$' } }
+    get:
+      operationId: getCandles
+      summary: Candles for the watchlist chart
+      description: |
+        Read from Fauxnance by the platform, so the key never reaches the browser; each answer is kept for
+        `app.candles.cache-seconds` (60). Oldest first. A broken or missing provider answer is 503, never made up.
+      parameters:
+        - { name: period, in: query, schema: { type: string, enum: ['1d', '4h', '1h', '15m'], default: '1d' } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 500, default: 30 } }
+      responses:
+        '200': { description: Candles, content: { application/json: { schema: { $ref: '#/components/schemas/Candles' } } } }
+        '422': { description: Bad symbol, period or limit (VAL-422) }
+        '503': { description: Chart data is not available right now (MKT-503) }
+
+  /api/v1/portfolio/{accountId}/history:
+    parameters: [{ $ref: '#/components/parameters/AccountId' }]
+    get:
+      operationId: getPortfolioHistory
+      summary: Portfolio value over time, as recorded
+      description: |
+        Values the portfolio, records a point if none was taken in the last ten minutes, and returns the recorded
+        points. It starts empty and fills with use (decision 0016). `dayChange` is the move since the latest point
+        at least 24 hours old with cash added or taken out removed; it is null until such a point exists.
+      parameters:
+        - { name: range, in: query, schema: { type: string, enum: [30d, 3m, 1y], default: 30d } }
+      responses:
+        '200': { description: History, content: { application/json: { schema: { $ref: '#/components/schemas/PortfolioHistory' } } } }
+        '422': { description: Unknown range (VAL-422) }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+
+  parameters:
+    AccountId: { name: accountId, in: path, required: true, schema: { type: integer, format: int64 } }
+
+  schemas:
+    Condition: { type: string, enum: ['>', '>=', '<', '<=', '=='] }
+
+    CreateAlert:
+      type: object
+      required: [symbol, condition, price]
+      additionalProperties: false
+      properties:
+        symbol: { type: string, maxLength: 20 }
+        condition: { $ref: '#/components/schemas/Condition' }
+        price: { type: number, exclusiveMinimum: 0, description: 'Up to four decimals.' }
+        enabled: { type: boolean, default: true }
+
+    UpdateAlert:
+      type: object
+      additionalProperties: false
+      properties:
+        symbol: { type: string, maxLength: 20 }
+        condition: { $ref: '#/components/schemas/Condition' }
+        price: { type: number, exclusiveMinimum: 0 }
+        enabled: { type: boolean }
+
+    Alert:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        symbol: { type: string }
+        condition: { $ref: '#/components/schemas/Condition' }
+        price: { type: number }
+        enabled: { type: boolean }
+        status: { type: string, enum: [ACTIVE, TRIGGERED, CANCELLED] }
+        deliveryState: { type: string, enum: [NONE, PENDING_HANDOVER, HANDED_OVER, HANDOVER_FAILED] }
+        triggeredPrice: { type: [number, 'null'] }
+        triggeredAt: { type: [string, 'null'], format: date-time }
+        createdAt: { type: string, format: date-time }
+        triggerCount: { type: integer, description: How many times it has fired. }
+
+    AlertTriggers:
+      type: object
+      properties:
+        alertId: { type: integer, format: int64 }
+        triggers:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: integer, format: int64 }
+              triggeredAt: { type: string, format: date-time }
+              triggerPrice: { type: number }
+              notificationStatus: { type: string, enum: [SENT, QUEUED, HELD, FAILED, SKIPPED, UNKNOWN] }
+              notificationId: { type: [integer, 'null'], format: int64 }
+
+    FundsRequest:
+      type: object
+      required: [amount, method]
+      additionalProperties: false
+      properties:
+        amount: { type: number, exclusiveMinimum: 0, description: 'Up to two decimals.' }
+        method: { type: string, enum: [BANK_TRANSFER, UPI, CARD], description: Recorded only; nothing is charged. }
+
+    FundsMovement:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        accountId: { type: integer, format: int64 }
+        kind: { type: string, enum: [DEPOSIT, WITHDRAWAL] }
+        amount: { type: number }
+        currency: { type: string }
+        method: { type: string, enum: [BANK_TRANSFER, UPI, CARD] }
+        balanceAfter: { type: number }
+        createdAt: { type: string, format: date-time }
+
+    Candles:
+      type: object
+      properties:
+        symbol: { type: string }
+        currency: { type: [string, 'null'] }
+        period: { type: string }
+        asOf: { type: string, format: date-time }
+        candles:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp: { type: string, format: date-time }
+              open: { type: number }
+              high: { type: number }
+              low: { type: number }
+              close: { type: number }
+              volume: { type: [integer, 'null'] }
+
+    PortfolioHistory:
+      type: object
+      properties:
+        accountId: { type: integer, format: int64 }
+        baseCurrency: { type: [string, 'null'] }
+        range: { type: string, enum: [30d, 3m, 1y] }
+        points:
+          type: array
+          items: { type: object, properties: { at: { type: string, format: date-time }, totalValue: { type: number } } }
+        dayChange:
+          type: [object, 'null']
+          properties: { amount: { type: number }, percent: { type: number }, since: { type: string, format: date-time } }

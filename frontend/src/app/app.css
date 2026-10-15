@@ -1,0 +1,99 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+
+:host {
+	background-color: transparent;
+}
+
+.shell {
+	display: grid;
+}
+
+.shell__header {
+	max-width: 42rem;
+	display: grid;
+	gap: 1rem;
+}
+
+.shell__eyebrow {
+	margin: 0;
+	text-transform: uppercase;
+	letter-spacing: 0.2em;
+	color: #7dd3fc;
+	font-size: 0.76rem;
+}
+
+/* The sign-in screen runs edge to edge inside the frame. */
+.app-frame--bare .app-content {
+  padding: 0;
+  overflow: hidden;
+}
+
+.app-content {
+  overflow: auto;
+  /* Room at the bottom so the last of a long page can scroll clear of the chat bubble in the corner. */
+  padding: 16px 16px 104px;
+}
+
+@keyframes shellEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell::before,
+  .app-shell::after {
+    animation: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .app-shell {
+    padding: 12px;
+  }
+
+  .app-frame {
+    min-height: calc(100dvh - 24px);
+  }
+}
+
+/* A wide child (the landing ticker) must never stretch the whole page: the column may shrink to the viewport. */
+.app-shell {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.app-frame {
+  min-width: 0;
+}
+
+.password-banner {
+  margin: 8px 16px 0;
+}
+
+/* With a signed-in customer the shell is a sidebar beside the page. */
+.app-shell--sidebar {
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 0;
+  gap: 0;
+}
+
+.app-shell--sidebar .app-frame {
+  min-height: 100dvh;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+@media (max-width: 800px) {
+  .app-shell--sidebar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -1,0 +1,50 @@
+<div class="quality" data-testid="execution-quality">
+  @if (view().length === 0) {
+    <p class="muted empty">Appears once orders with a limit price have filled.</p>
+  } @else {
+    @if (headline(); as head) {
+      <p class="headline" [class.headline--good]="head.good && !head.neutral" [class.headline--bad]="!head.good"
+         data-testid="quality-headline">
+        @if (head.neutral) {
+          Your {{ head.fills }} {{ head.fills === 1 ? 'fill was' : 'fills were' }} right at your limit prices.
+        } @else if (head.good) {
+          Across {{ head.fills }} {{ head.fills === 1 ? 'fill' : 'fills' }}, you got prices
+          <strong>{{ head.percent | number: '1.1-1' }}% better</strong> than your limit on average.
+        } @else {
+          Across {{ head.fills }} {{ head.fills === 1 ? 'fill' : 'fills' }}, prices came in
+          <strong>{{ head.percent | number: '1.1-1' }}% worse</strong> than your limit on average.
+        }
+        @if (!head.neutral) {
+          <span class="muted"> That is {{ head.saved >= 0 ? 'worth' : 'a cost of' }}
+            {{ (head.saved >= 0 ? head.saved : -head.saved) | number: '1.2-2' }} in total.</span>
+        }
+      </p>
+    }
+
+    <ul>
+      @for (row of view(); track row.symbol; let i = $index) {
+        <li [style.animation-delay.ms]="i * 70" data-testid="quality-row">
+          <span class="sym">
+            <strong>{{ row.symbol }}</strong>
+            <span class="muted">{{ row.orders }} {{ row.orders === 1 ? 'fill' : 'fills' }}</span>
+          </span>
+          <span class="track" aria-hidden="true">
+            <span class="mid"></span>
+            <span class="bar" [class.bar--good]="row.good" [class.bar--bad]="!row.good"
+                  [style.width.%]="row.width" [style.animation-delay.ms]="200 + i * 70"></span>
+          </span>
+          <span class="val tabular" [class.val--good]="row.good" [class.val--bad]="!row.good">
+            {{ row.improvementPct >= 0 ? '+' : '' }}{{ row.improvementPct | number: '1.1-1' }}%
+            <span class="verdict">{{ row.verdict }}</span>
+          </span>
+        </li>
+      }
+    </ul>
+
+    <div class="legend muted" aria-hidden="true">
+      <span>&larr; Worse than your limit</span>
+      <span>At limit</span>
+      <span>Better than your limit &rarr;</span>
+    </div>
+  }
+</div>

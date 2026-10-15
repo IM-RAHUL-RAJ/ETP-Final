@@ -1,0 +1,125 @@
+<section class="page" data-testid="alerts-page">
+  <header class="head">
+    <div>
+      <h1>Price alerts</h1>
+      <p class="muted" data-testid="alert-count">
+        @if (alerts().length === 0) {
+          Get told when a price meets your condition. They reach you the way you set in <a routerLink="/settings">Settings</a>.
+        } @else {
+          Total: {{ alerts().length }} {{ alerts().length === 1 ? 'alert' : 'alerts' }} &middot; {{ enabledCount() }} enabled, {{ disabledCount() }} disabled
+          &middot; {{ remaining() }} of {{ cap }} left
+        }
+      </p>
+    </div>
+    <button type="button" class="primary" (click)="openCreate()" data-testid="alert-create-open">
+      <app-icon name="plus" [size]="18" /> Create Alert
+    </button>
+  </header>
+
+  @if (notice()) {
+    <div class="banner success" role="status" data-testid="alert-notice">{{ notice() }}</div>
+  }
+  @if (actionError()) {
+    <div class="banner error" role="alert" data-testid="alert-action-error">{{ actionError() }}</div>
+  }
+
+  @if (loading()) {
+    <article class="card" aria-busy="true" aria-label="Loading alerts">
+      <span class="skeleton short"></span><span class="skeleton"></span><span class="skeleton"></span>
+    </article>
+  } @else if (error()) {
+    <div class="banner error" role="alert" data-testid="alerts-error">{{ error() }}</div>
+    <div><button type="button" class="secondary" (click)="load()">Try again</button></div>
+  } @else if (alerts().length === 0) {
+    <article class="card" data-testid="alerts-empty">
+      <app-empty-state title="No alerts yet" message="Create your first alert and we will tell you when a price crosses the level you care about.">
+        <button type="button" class="primary" (click)="openCreate()"><app-icon name="plus" [size]="18" /> Create your first alert</button>
+      </app-empty-state>
+    </article>
+  } @else {
+    <div class="filters" data-testid="alert-filters">
+      <div class="tabs" role="tablist" aria-label="Filter by status">
+        @for (tab of tabs(); track tab.id) {
+          <button type="button" role="tab" [class.active]="filter() === tab.id" [attr.aria-selected]="filter() === tab.id"
+                  (click)="setFilter(tab.id)" [attr.data-testid]="'filter-' + tab.id">
+            {{ tab.label }}<span class="count">{{ tab.count }}</span>
+          </button>
+        }
+      </div>
+
+      <div class="filters__more">
+        <div class="search">
+          <app-icon name="filter" [size]="16" />
+          <input type="search" placeholder="Search symbol" aria-label="Search by symbol" autocomplete="off" [value]="search()"
+                 (input)="search.set($any($event.target).value)" data-testid="alert-search" />
+        </div>
+        <app-select class="filters__select" [options]="conditionFilterOptions" [value]="conditionFilter()" (valueChange)="conditionFilter.set($event)"
+                    placeholder="Any condition" searchPlaceholder="Filter conditions" testId="alert-condition-filter" ariaLabel="Filter by condition" />
+        @if (hasMoreFilters()) {
+          <button type="button" class="ghost" (click)="clearFilters()" data-testid="alert-clear-filters">Clear</button>
+        }
+      </div>
+    </div>
+
+    <ul class="alerts stagger" data-testid="alerts-table">
+      @for (alert of visible(); track alert.id) {
+        <li class="alert card" [class.alert--off]="!alert.enabled" [attr.data-testid]="'alert-' + alert.id">
+          <div class="alert__who">
+            <strong class="alert__symbol">{{ alert.symbol }}</strong>
+            <span class="muted">{{ instrumentName(alert.symbol) }}</span>
+          </div>
+
+          <div class="alert__when" data-testid="alert-condition-text">
+            <span class="alert__operator">{{ conditionLabel(alert) }}</span>
+            @if (currencyOf(alert.symbol)) { <span class="pill-ccy" [attr.data-ccy]="currencyOf(alert.symbol)">{{ currencyOf(alert.symbol) }}</span> }
+            @if (alert.triggerCount > 0) {
+              <span class="fired" data-testid="alert-fired">Fired &times;{{ alert.triggerCount }}</span>
+            }
+          </div>
+
+          <div class="alert__state">
+            <button type="button" class="switch" role="switch" [attr.aria-checked]="alert.enabled"
+                    [attr.aria-label]="(alert.enabled ? 'Disable' : 'Enable') + ' alert for ' + alert.symbol"
+                    [disabled]="busyId() !== null || locked(alert)" (click)="toggle(alert)" data-testid="alert-toggle"></button>
+            <span data-testid="alert-status">{{ alert.enabled ? 'Enabled' : 'Disabled' }}</span>
+          </div>
+
+          <div class="alert__actions">
+            <button type="button" class="icon-btn" (click)="openEdit(alert)" [disabled]="locked(alert)" aria-label="Edit alert" data-tip="Edit" data-testid="alert-edit">
+              <app-icon name="edit" />
+            </button>
+            <button type="button" class="icon-btn" (click)="showHistory(alert)" aria-label="Trigger history" data-tip="Trigger history" data-testid="alert-history">
+              <app-icon name="history" />
+            </button>
+            <button type="button" class="icon-btn danger" (click)="askDelete(alert)" [disabled]="locked(alert)" aria-label="Delete alert" data-tip="Delete" data-tip-end data-testid="alert-delete">
+              <app-icon name="trash" />
+            </button>
+          </div>
+        </li>
+      } @empty {
+        <li class="none card"><span class="muted" data-testid="alerts-none-match">No alerts match these filters.</span></li>
+      }
+    </ul>
+  }
+
+  @if (dialogOpen()) {
+    <app-alert-dialog [alert]="editing()" [instruments]="instruments()" [initialSymbol]="initialSymbol()"
+                      (saved)="onSaved($event)" (closed)="closeDialog()" />
+  }
+
+  @if (deleting(); as target) {
+    <app-modal title="Delete this alert?" mascot="think" (closed)="deleting.set(null)">
+      <p class="muted" data-testid="delete-confirm">
+        {{ target.symbol }} {{ conditionLabel(target) }} and its trigger history will be removed. This cannot be undone.
+      </p>
+      <div class="modal__actions">
+        <button type="button" class="secondary" (click)="deleting.set(null)" data-testid="delete-cancel">Keep it</button>
+        <button type="button" class="primary" (click)="confirmDelete()" [disabled]="busyId() !== null" data-testid="delete-confirm-button">Delete</button>
+      </div>
+    </app-modal>
+  }
+
+  @if (historyOf(); as target) {
+    <app-trigger-history-panel [alert]="target" [currency]="currencyOf(target.symbol)" (closed)="historyOf.set(null)" />
+  }
+</section>

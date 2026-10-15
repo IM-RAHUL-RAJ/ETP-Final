@@ -1,0 +1,147 @@
+openapi: 3.1.0
+
+info:
+  title: In-app assistant
+  version: 1.0.0
+  summary: A companion that answers questions about the signed-in customer's own account data.
+  description: |
+    Built as the `com.capstone.etp.assistant` package inside the Trade REST API.
+
+    ## What it does
+    Answers questions about the customer's **orders, positions, holdings, profit and loss, alerts and account activity**,
+    from that account's own data. It reads and answers; it cannot place, change or cancel anything.
+
+    ## How an answer is made
+    1. The token must own `{accountId}` (otherwise 403) and be within the rate limit (429 `AST-429`).
+    2. **Deterministic screens run first, before any model:** a prompt-injection attempt is refused (`intent: BLOCKED`);
+       an investment-advice question is refused with `advisoryBlocked: true` and `redirectTo: /advice`.
+    3. The question is classified. Anything not about the app is declined (`OFF_TOPIC`).
+    4. The figures (`dataCards`) are read from the account's data. They never come from the model.
+    5. If a Gemini key is configured (server side only), the model **phrases** the answer from those facts; its text is
+       checked and replaced by the rules' own sentence if it looks like advice, a leak or an essay, or if the call fails
+       (`answeredBy: RULES`). Without a key the answer is always `RULES`.
+
+    The Gemini key is read from the server environment (`GEMINI_API_KEY`) and is never sent to the browser.
+
+servers:
+  - url: /api/v1
+
+security:
+  - bearerAuth: []
+
+paths:
+  /accounts/{accountId}/assistant/chat:
+    post:
+      summary: Ask the assistant
+      parameters:
+        - { name: accountId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ChatRequest' }
+            example: { message: Show my last 10 transactions, selectedQuickAction: last_transactions }
+      responses:
+        '200':
+          description: The answer
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChatResponse' }
+              examples:
+                transactions:
+                  value:
+                    answer: Here are your 2 most recent orders. The latest is SELL 10 MSFT (NEW, 7 Oct, 11:55).
+                    intent: RECENT_TRANSACTIONS
+                    advisoryBlocked: false
+                    redirectTo: null
+                    dataCards:
+                      - kind: TABLE
+                        title: Last 2 transactions
+                        columns: [When, Symbol, Side, Qty, Price, Status]
+                        rows:
+                          - ['7 Oct, 11:55', MSFT, SELL, '10', '100.00', NEW]
+                          - ['7 Oct, 10:00', AAPL, BUY, '10', '232.71', FILLED]
+                    quickActions: [{ id: last_transactions, label: Show my last 10 transactions }]
+                    citations: [orders]
+                    conversationId: 6d2f0a58-9e8d-4c43-9d2e-0b3e7b8e1f11
+                    answeredBy: RULES
+                advice:
+                  value:
+                    answer: I cannot provide investment advice. Please use the Advice page for research signals.
+                    intent: ADVISORY
+                    advisoryBlocked: true
+                    redirectTo: /advice
+                    dataCards: []
+                    quickActions: []
+                    citations: []
+                    conversationId: 6d2f0a58-9e8d-4c43-9d2e-0b3e7b8e1f11
+                    answeredBy: RULES
+        '401': { description: No or invalid token (AUTH-401) }
+        '403': { description: The account is not one of the token's own (ACC-403) }
+        '422': { description: Blank message, or longer than 500 characters (VAL-422) }
+        '429': { description: Too many questions in a minute (AST-429) }
+
+  /accounts/{accountId}/assistant/quick-actions:
+    get:
+      summary: The questions the app offers as buttons
+      parameters:
+        - { name: accountId, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200':
+          description: The quick actions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/QuickAction' }
+        '401': { description: AUTH-401 }
+        '403': { description: ACC-403 }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+
+  schemas:
+    ChatRequest:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string, minLength: 1, maxLength: 500 }
+        conversationId: { type: string, maxLength: 64, description: Echoed back; made by the server when absent }
+        selectedQuickAction:
+          type: string
+          maxLength: 40
+          enum: [portfolio_performance, top_movers, last_transactions, buy_sell_week, open_orders, stale_prices, pnl_summary, activity_trend]
+          description: When set, decides the topic; an unknown id is ignored. Advice and injection screens still apply to the message.
+
+    ChatResponse:
+      type: object
+      required: [answer, intent, advisoryBlocked, dataCards, quickActions, citations, conversationId, answeredBy]
+      properties:
+        answer: { type: string }
+        intent:
+          type: string
+          enum: [PORTFOLIO_PERFORMANCE, TOP_MOVERS, RECENT_TRANSACTIONS, BUY_SELL_COUNT, OPEN_ORDERS, STALE_PRICES, PNL_SUMMARY, ACTIVITY_TREND, POSITIONS, ALERTS, GENERAL, ADVISORY, BLOCKED, OFF_TOPIC]
+        advisoryBlocked: { type: boolean }
+        redirectTo: { type: [string, 'null'], description: '/advice when advisoryBlocked' }
+        dataCards: { type: array, items: { $ref: '#/components/schemas/DataCard' } }
+        quickActions: { type: array, items: { $ref: '#/components/schemas/QuickAction' } }
+        citations: { type: array, items: { type: string }, description: 'Which datasets were used: orders, portfolio summary, portfolio positions, portfolio pnl, alerts' }
+        conversationId: { type: string }
+        answeredBy: { type: string, enum: [GEMINI, RULES] }
+
+    DataCard:
+      type: object
+      required: [kind, title, columns, rows]
+      properties:
+        kind: { type: string, enum: [TABLE, METRICS], description: METRICS is two columns, a measure and its value }
+        title: { type: string }
+        columns: { type: array, items: { type: string } }
+        rows: { type: array, items: { type: array, items: { type: string } } }
+
+    QuickAction:
+      type: object
+      required: [id, label]
+      properties:
+        id: { type: string }
+        label: { type: string }

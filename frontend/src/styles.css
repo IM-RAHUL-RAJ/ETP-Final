@@ -1,0 +1,1054 @@
+/* =====================================================================
+   Quorum design system: Zard UI (shadcn "neutral") tokens, set in the Nothing dot-matrix face.
+   One neutral scale, a solid dark primary, one signal red used for small things (dots, active marks).
+   Everything is a token. Components never write a hex.
+   Light is the default; dark comes from <html data-theme="dark"> or, when no theme is chosen, the system.
+   ===================================================================== */
+:root {
+  color-scheme: light;
+
+  /* Zard / shadcn neutral */
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #fafafa;
+  --muted-bg: #f5f5f5;
+  --line: #e5e5e5;
+  --text: #0a0a0a;
+  --muted: #525252;
+  --accent: #171717;
+  --accent-hover: #262626;
+  --on-accent: #fafafa;
+  --ring: rgba(10, 10, 10, 0.16);
+  --dot-grid: rgba(10, 10, 10, 0.07);
+
+  /* Signal: the Nothing red. Small marks only. */
+  --signal: #d71921;
+
+  /* Buy and sell: solid colours with white text, readable in both themes */
+  --buy: #15803d;
+  --buy-hover: #166534;
+  --sell: #dc2626;
+  --sell-hover: #b91c1c;
+
+  /* Meaning */
+  --ok: #15803d;
+  --ok-bg: #dcfce7;
+  --reject: #dc2626;
+  --reject-bg: #fee2e2;
+  --new: #2563eb;
+  --new-bg: #dbeafe;
+  --cancel: #525252;
+  --cancel-bg: #f0f0f0;
+  --amber: #b45309;
+  --amber-bg: #fef3c7;
+  --blue: #2563eb;
+  --blue-bg: #dbeafe;
+  --violet: #7c3aed;
+  --violet-bg: #ede9fe;
+  --teal: #0f766e;
+  --teal-bg: #ccfbf1;
+  --slate: #737373;
+
+  /* Chart series, in order */
+  --c1: #0a0a0a;
+  --c2: #d71921;
+  --c3: #2563eb;
+  --c4: #d97706;
+  --c5: #16a34a;
+  --c6: #7c3aed;
+
+  /* Depth: almost none. Popovers and dialogs only. */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 8px 24px -8px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.06);
+
+  /* Scale */
+  --sp-1: 8px;
+  --sp-2: 16px;
+  --sp-3: 24px;
+  --sp-4: 32px;
+  --sp-5: 40px;
+  --sp-6: 48px;
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 10px;
+
+  /* Motion */
+  --fast: 200ms;
+  --enter: 300ms;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Type: Doto everywhere. */
+  /* Plain, readable text everywhere; the Doto dot face only for headings and the big figures. */
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-sans: var(--font-body);
+  --font-mono: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --font-dot: 'Doto', ui-monospace, Consolas, monospace;
+
+  --sidebar-w: 232px;
+  --sidebar-w-collapsed: 64px;
+
+  /* Zardui names */
+  --zd-background: var(--bg);
+  --zd-foreground: var(--text);
+  --zd-card: var(--surface);
+  --zd-border: var(--line);
+  --zd-primary: var(--accent);
+  --zd-primary-foreground: var(--on-accent);
+  --zd-muted-foreground: var(--muted);
+  --zd-destructive: var(--reject);
+  --zd-radius: var(--r-lg);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0a0a0a;
+  --surface: #121212;
+  --surface-2: #171717;
+  --muted-bg: #1c1c1c;
+  --line: #2a2a2a;
+  --text: #fafafa;
+  --muted: #b8b8b8;
+  --accent: #fafafa;
+  --accent-hover: #e5e5e5;
+  --on-accent: #171717;
+  --ring: rgba(250, 250, 250, 0.22);
+  --dot-grid: rgba(250, 250, 250, 0.08);
+  --signal: #ff4d4f;
+  --buy: #16a34a;
+  --buy-hover: #15803d;
+  --sell: #dc2626;
+  --sell-hover: #b91c1c;
+  --ok: #4ade80;
+  --ok-bg: #0f2a1a;
+  --reject: #f87171;
+  --reject-bg: #2e1313;
+  --new: #60a5fa;
+  --new-bg: #10203a;
+  --cancel: #a3a3a3;
+  --cancel-bg: #222222;
+  --amber: #fbbf24;
+  --amber-bg: #2d2208;
+  --blue: #60a5fa;
+  --blue-bg: #10203a;
+  --violet: #a78bfa;
+  --violet-bg: #1e1738;
+  --teal: #2dd4bf;
+  --teal-bg: #0c2a27;
+  --slate: #a3a3a3;
+  --c1: #fafafa;
+  --c2: #ff4d4f;
+  --c3: #60a5fa;
+  --c4: #fbbf24;
+  --c5: #4ade80;
+  --c6: #a78bfa;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 10px 28px -8px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']):not([data-theme='dark']) {
+    color-scheme: dark;
+    --bg: #0a0a0a;
+    --surface: #121212;
+    --surface-2: #171717;
+    --muted-bg: #1c1c1c;
+    --line: #2a2a2a;
+    --text: #fafafa;
+    --muted: #b8b8b8;
+    --accent: #fafafa;
+    --accent-hover: #e5e5e5;
+    --on-accent: #171717;
+    --ring: rgba(250, 250, 250, 0.22);
+    --dot-grid: rgba(250, 250, 250, 0.08);
+    --signal: #ff4d4f;
+    --buy: #16a34a;
+    --buy-hover: #15803d;
+    --sell: #dc2626;
+    --sell-hover: #b91c1c;
+    --ok: #4ade80;
+    --ok-bg: #0f2a1a;
+    --reject: #f87171;
+    --reject-bg: #2e1313;
+    --new: #60a5fa;
+    --new-bg: #10203a;
+    --cancel: #a3a3a3;
+    --cancel-bg: #222222;
+    --amber: #fbbf24;
+    --amber-bg: #2d2208;
+    --blue: #60a5fa;
+    --blue-bg: #10203a;
+    --violet: #a78bfa;
+    --violet-bg: #1e1738;
+    --teal: #2dd4bf;
+    --teal-bg: #0c2a27;
+    --slate: #a3a3a3;
+    --c1: #fafafa;
+    --c2: #ff4d4f;
+    --c3: #60a5fa;
+    --c4: #fbbf24;
+    --c5: #4ade80;
+    --c6: #a78bfa;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 10px 28px -8px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0;
+  color: var(--text);
+  background-color: var(--bg);
+  /* The Nothing dot grid, very faint, behind everything. */
+  background-image: radial-gradient(circle, var(--dot-grid) 1px, transparent 1.2px);
+  background-size: 18px 18px;
+  transition:
+    background-color 300ms ease,
+    color 300ms ease;
+}
+
+:root.theme-transitioning *,
+:root.theme-transitioning *::before,
+:root.theme-transitioning *::after {
+  transition:
+    background-color 320ms ease,
+    border-color 320ms ease,
+    color 320ms ease,
+    fill 320ms ease,
+    stroke 320ms ease !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+
+/* The dot face: headings, and the main figures (net worth, cash, totals). */
+h1,
+h2,
+h3,
+.display,
+.balance__value,
+.hhi__value,
+.stat__value,
+.big,
+.alert__symbol,
+.alert__operator,
+.hero__value,
+.figure__value,
+.total strong,
+.balance__amount,
+.fx-result strong,
+.tile__value,
+.donut__value,
+.detail__price .display {
+  font-family: var(--font-dot);
+  font-weight: 900;
+}
+
+h1 {
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1.15;
+}
+
+h2 {
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+h3 {
+  font-size: 16px;
+  font-weight: 900;
+}
+
+a {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--text) 35%, transparent);
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--fast) ease-out;
+}
+
+a:hover {
+  text-decoration-color: var(--text);
+}
+
+a.button,
+a.button:hover,
+.nav-item,
+.nav-item:hover {
+  text-decoration: none;
+}
+
+::selection {
+  background: var(--text);
+  color: var(--bg);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.tabular,
+.mono,
+.price {
+  font-variant-numeric: tabular-nums;
+}
+
+.display {
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---- Pages ---- */
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-2);
+  animation: pageEnter 280ms var(--ease);
+}
+
+/* Entrance animations must not keep a transform alive afterwards: a filling transform makes the element the
+   containing block of position:fixed children (dialogs, side panels), and they collapse into it. */
+.page > *,
+.stagger > * {
+  animation: riseIn var(--enter) var(--ease) backwards;
+}
+
+.page > *:nth-child(2) { animation-delay: 60ms; }
+.page > *:nth-child(3) { animation-delay: 110ms; }
+.page > *:nth-child(4) { animation-delay: 160ms; }
+.page > *:nth-child(n + 5) { animation-delay: 200ms; }
+
+.stagger > *:nth-child(2) { animation-delay: 50ms; }
+.stagger > *:nth-child(3) { animation-delay: 100ms; }
+.stagger > *:nth-child(4) { animation-delay: 150ms; }
+.stagger > *:nth-child(5) { animation-delay: 200ms; }
+.stagger > *:nth-child(6) { animation-delay: 250ms; }
+.stagger > *:nth-child(n + 7) { animation-delay: 300ms; }
+
+/* Overlays are not part of the page's entrance sequence: a moving ancestor would trap their fixed backdrop. */
+.page > :is(app-modal, app-alert-dialog, app-funds-dialog, app-trigger-history-panel) {
+  animation: none;
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes rowEnter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes bannerEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes skeletonPulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
+/* ---- Form controls ---- */
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  background-color: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-sm);
+  transition:
+    border-color var(--fast) ease-out,
+    box-shadow var(--fast) ease-out;
+}
+
+textarea {
+  height: auto;
+  padding: 8px 12px;
+}
+
+input::placeholder {
+  color: var(--muted);
+}
+
+input:hover:not(:disabled):not([readonly]),
+select:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--text) 30%, var(--line));
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--text);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+input.invalid {
+  border-color: var(--reject);
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input[readonly] {
+  background: var(--muted-bg);
+  color: var(--muted);
+  box-shadow: none;
+  cursor: default;
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  accent-color: var(--text);
+  box-shadow: none;
+}
+
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 34px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23737373' stroke-width='2' stroke-linecap='square'%3E%3Cpath d='m5 8 5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+}
+
+select option {
+  background-color: var(--surface);
+  color: var(--text);
+}
+
+.field-hint,
+.field-error {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+}
+
+.field-hint {
+  color: var(--muted);
+}
+
+.field-error {
+  color: var(--reject);
+  animation: bannerEnter 200ms var(--ease);
+}
+
+input[type='password']::-ms-reveal,
+input[type='password']::-ms-clear {
+  display: none;
+}
+
+/* ---- Buttons (Zard: solid primary, outline secondary, ghost, destructive) ---- */
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition:
+    background-color var(--fast) ease-out,
+    border-color var(--fast) ease-out,
+    color var(--fast) ease-out,
+    opacity var(--fast) ease-out,
+    box-shadow var(--fast) ease-out,
+    transform 120ms ease-out;
+}
+
+button:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+button:active:not(:disabled),
+a.button:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button.primary,
+a.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  font-weight: 700;
+  color: var(--on-accent);
+  background-color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--r-md);
+  cursor: pointer;
+}
+
+button.primary:hover:not(:disabled),
+a.button:hover {
+  background-color: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+button.secondary {
+  color: var(--text);
+  background-color: var(--bg);
+  border-color: var(--line);
+  box-shadow: var(--shadow-sm);
+}
+
+button.secondary:hover:not(:disabled) {
+  background-color: var(--muted-bg);
+}
+
+button.ghost {
+  color: var(--muted);
+}
+
+button.ghost:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--muted-bg);
+}
+
+button.danger {
+  color: var(--reject);
+  background: var(--reject-bg);
+  border-color: transparent;
+}
+
+button.danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--reject) 22%, var(--reject-bg));
+}
+
+button.lg,
+a.button.lg {
+  height: 46px;
+  padding: 0 24px;
+  font-size: 16px;
+}
+
+/* Icon-only buttons */
+.icon-btn {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.icon-btn:hover:not(:disabled),
+.icon-btn:focus-visible {
+  color: var(--text);
+  background: var(--muted-bg);
+}
+
+.icon-btn.danger:hover:not(:disabled) {
+  color: var(--reject);
+  background: var(--reject-bg);
+}
+
+.icon-btn.active {
+  color: var(--text);
+  background: var(--muted-bg);
+  border-color: var(--line);
+}
+
+.icon-btn svg,
+svg.i {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  flex: none;
+}
+
+/* ---- Cards ---- */
+.card {
+  background-color: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: var(--sp-3);
+  box-shadow: var(--shadow-sm);
+  animation: cardFadeIn var(--enter) var(--ease) backwards;
+  transition:
+    background-color 300ms ease,
+    border-color var(--fast) ease-out;
+}
+
+.card.lift:hover {
+  border-color: color-mix(in srgb, var(--text) 30%, var(--line));
+}
+
+/* ---- Banners ---- */
+.banner {
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 12px 16px;
+  font-size: 14px;
+  animation: bannerEnter 240ms var(--ease);
+}
+
+.banner.error {
+  color: var(--reject);
+  border-color: color-mix(in srgb, var(--reject) 40%, var(--line));
+  background-color: var(--reject-bg);
+}
+
+.banner.info {
+  color: var(--new);
+  border-color: color-mix(in srgb, var(--new) 40%, var(--line));
+  background-color: var(--new-bg);
+}
+
+.banner.success {
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 40%, var(--line));
+  background-color: var(--ok-bg);
+}
+
+.banner.warn {
+  color: var(--amber);
+  border-color: color-mix(in srgb, var(--amber) 40%, var(--line));
+  background-color: var(--amber-bg);
+}
+
+/* ---- Tables ---- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th {
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+
+td {
+  padding: 12px;
+  border-bottom: 1px dashed var(--line);
+}
+
+tbody tr {
+  transition: background-color 160ms ease;
+}
+
+tbody tr:hover {
+  background-color: var(--muted-bg);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ---- Skeleton ---- */
+.skeleton {
+  display: block;
+  height: 14px;
+  margin-bottom: 10px;
+  border-radius: var(--r-sm);
+  background-color: var(--muted-bg);
+  animation: skeletonPulse 1.4s ease-in-out infinite;
+}
+
+.skeleton.short {
+  width: 40%;
+}
+
+/* ---- Tabs (Zard: a muted track with a raised active tab) ---- */
+.tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  background: var(--muted-bg);
+  border-radius: var(--r-md);
+}
+
+.tabs button {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  border-radius: var(--r-sm);
+}
+
+.tabs button:hover:not(.active) {
+  color: var(--text);
+}
+
+.tabs button.active {
+  color: var(--text);
+  background: var(--bg);
+  border-color: var(--line);
+  box-shadow: var(--shadow-sm);
+}
+
+.tabs .count {
+  margin-left: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.segmented-control {
+  display: inline-flex;
+  padding: 3px;
+  background: var(--muted-bg);
+  border-radius: var(--r-md);
+}
+
+.segmented-control button {
+  height: 30px;
+  color: var(--muted);
+}
+
+.segmented-control button.selected {
+  color: var(--text);
+  background: var(--bg);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ---- Badges and pills ---- */
+.badge,
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--muted-bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+}
+
+.badge.ok,
+.status-badge[data-status='FILLED'],
+.status-badge[data-status='ONLINE'] {
+  color: var(--ok);
+  background: var(--ok-bg);
+  border-color: transparent;
+}
+
+.badge.new,
+.status-badge[data-status='NEW'] {
+  color: var(--new);
+  background: var(--new-bg);
+  border-color: transparent;
+}
+
+.badge.reject,
+.status-badge[data-status='REJECTED'],
+.status-badge[data-status='UNAVAILABLE'] {
+  color: var(--reject);
+  background: var(--reject-bg);
+  border-color: transparent;
+}
+
+.badge.cancel,
+.status-badge[data-status='CANCELLED'],
+.status-badge[data-status='NOT_CONFIGURED'] {
+  color: var(--cancel);
+  background: var(--cancel-bg);
+  border-color: transparent;
+}
+
+.pill-ccy {
+  display: inline-block;
+  padding: 1px 7px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--muted-bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+}
+
+/* Freshness and state dots: square, like a pixel */
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: var(--slate);
+  flex: none;
+}
+
+.dot.live {
+  background: var(--ok);
+}
+
+.dot.delayed {
+  background: var(--amber);
+}
+
+.dot.stale {
+  background: var(--reject);
+}
+
+[data-dir='gain'] {
+  color: var(--ok);
+}
+
+[data-dir='loss'] {
+  color: var(--reject);
+}
+
+/* ---- Switch ---- */
+.switch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  padding: 0;
+  background: color-mix(in srgb, var(--text) 18%, transparent);
+  border-radius: 0;
+  flex: none;
+}
+
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  background: var(--bg);
+  transition: transform var(--fast) steps(4, end);
+}
+
+.switch[aria-checked='true'] {
+  background: var(--accent);
+}
+
+.switch[aria-checked='true']::after {
+  transform: translateX(18px);
+  background: var(--on-accent);
+}
+
+.switch:active:not(:disabled) {
+  transform: none;
+}
+
+/* ---- Hover labels: data-tip ---- */
+[data-tip] {
+  position: relative;
+}
+
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  z-index: 70;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  transform: translateX(-50%) translateY(2px);
+  padding: 4px 8px;
+  border-radius: var(--r-sm);
+  background: var(--text);
+  color: var(--bg);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    opacity var(--fast) ease-out,
+    transform var(--fast) ease-out;
+}
+
+[data-tip]:hover::after,
+[data-tip]:focus-visible::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+[data-tip-below]::after {
+  bottom: auto;
+  top: calc(100% + 6px);
+}
+
+[data-tip-end]::after {
+  left: auto;
+  right: 0;
+  transform: translateY(2px);
+}
+
+[data-tip-end]:hover::after,
+[data-tip-end]:focus-visible::after {
+  transform: translateY(0);
+}
+
+[data-tip][aria-expanded='true']::after {
+  display: none;
+}
+
+/* ---- Dialogs ---- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: var(--sp-2);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(3px);
+  animation: fadeIn var(--enter) ease-out;
+}
+
+.modal {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  padding: var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  animation: scaleIn var(--enter) var(--ease);
+}
+
+.modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-1);
+  margin-top: var(--sp-3);
+}
+
+/* ---- Utilities ---- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.modal--wide {
+  width: min(700px, 100%);
+}

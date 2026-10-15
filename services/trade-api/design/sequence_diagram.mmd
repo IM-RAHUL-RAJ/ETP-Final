@@ -1,0 +1,110 @@
+sequenceDiagram
+    autonumber
+    actor Client
+    participant OrderService
+    participant OrderValidator
+    participant Account
+    participant Instrument
+    participant PortfolioHolding
+    participant Order
+
+    Client->>OrderService: submitOrder(request)
+    OrderService->>OrderValidator: validate(order)
+
+    %% Rule 1: account must exist
+    OrderValidator->>Account: getAccount(accountId)
+    Account-->>OrderValidator: account (or null)
+    break Rule 1 failed - account not found
+        OrderValidator-->>OrderService: reject ACC-404
+        OrderService-->>Client: 404 ACC-404 Account not found
+    end
+
+    %% Rule 2: account must be ACTIVE
+    OrderValidator->>OrderValidator: check account.status == ACTIVE
+    break Rule 2 failed - account not active
+        OrderValidator-->>OrderService: reject ACC-403
+        OrderService-->>Client: 403 ACC-403 Account not active
+    end
+
+    %% Rule 3: instrument must exist and be tradable
+    OrderValidator->>Instrument: getInstrument(instrumentId)
+    Instrument-->>OrderValidator: instrument (or null)
+    break Rule 3 failed - instrument missing or not tradable
+        OrderValidator-->>OrderService: reject INS-404
+        OrderService-->>Client: 404 INS-404 Instrument not found
+    end
+
+    %% Rule 4: quantity must be > 0
+    OrderValidator->>OrderValidator: check quantity > 0
+    break Rule 4 failed - invalid quantity
+        OrderValidator-->>OrderService: reject VAL-422
+        OrderService-->>Client: 422 VAL-422 Invalid quantity
+    end
+
+    %% Rule 5: price must be > 0
+    OrderValidator->>OrderValidator: check price > 0
+    break Rule 5 failed - invalid price
+        OrderValidator-->>OrderService: reject VAL-422
+        OrderService-->>Client: 422 VAL-422 Invalid price
+    end
+
+    %% Rules 6/7: side-specific balance / holdings check
+    alt order side is BUY
+        OrderValidator->>OrderValidator: check cashBalance >= quantity * price
+        break Rule 6 failed - insufficient funds
+            OrderValidator-->>OrderService: reject ORD-400
+            OrderService-->>Client: 400 ORD-400 Insufficient funds
+        end
+    else order side is SELL
+        OrderValidator->>PortfolioHolding: getHeldQuantity(accountId, instrumentId)
+        PortfolioHolding-->>OrderValidator: heldQuantity
+        break Rule 7 failed - insufficient holdings
+            OrderValidator-->>OrderService: reject ORD-409
+            OrderService-->>Client: 409 ORD-409 Insufficient holdings
+        end
+    end
+
+    %% Rule 8: idempotency key must be unused
+    OrderValidator->>Order: existsByIdempotencyKey(key)
+    Order-->>OrderValidator: alreadyUsed (bool)
+    break Rule 8 failed - duplicate order
+        OrderValidator-->>OrderService: reject ORD-409
+        OrderService-->>Client: 409 ORD-409 Duplicate order
+    end
+
+    %% All 8 rules passed
+    OrderValidator-->>OrderService: valid
+    OrderService->>Order: create(order) status = NEW
+    Order-->>OrderService: orderId
+    OrderService-->>Client: 201 Created - order accepted
+
+    %% After order is validated, it is sent to Executor
+
+    participant OrderExecution
+    participant Transaction
+
+    alt order is cancelled before execution
+        Client->>OrderService: cancelOrder(orderId)
+        OrderService->>Order: updateStatus(CANCELLED)
+        Order->>OrderService: Status Updated
+        Note right of Order: terminalAt = now, no Transaction recorded
+        OrderService-->>Client: order CANCELLED
+
+    else order goes to execution
+        OrderService->>OrderExecution: execute(order)
+
+        alt execution succeeds
+            OrderExecution-->>OrderService: fill details
+            OrderService->>Order: updateStatus(FILLED)
+            OrderService->>Transaction: create(orderId, quantity, price, status = EXECUTED)
+            Transaction-->>OrderService: transactionId
+            OrderService-->>Client: order FILLED, transaction EXECUTED
+
+        else execution fails
+            OrderExecution-->>OrderService: failure reason
+            OrderService->>Order: updateStatus(REJECTED)
+            OrderService->>Transaction: create(orderId, quantity, price, status = FAILED)
+            Transaction-->>OrderService: transactionId
+            OrderService-->>Client: order REJECTED, transaction FAILED
+        end
+    end

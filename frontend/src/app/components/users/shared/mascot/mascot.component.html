@@ -1,0 +1,11 @@
+<span class="mascot" [style.width.px]="size()" [style.height.px]="size()" data-testid="mascot"
+      [attr.data-type]="resolvedType()" [attr.data-state]="state()" [attr.data-action]="animation()">
+  @if (thought(); as text) {
+    <span class="mascot__thought" role="status">{{ text }}</span>
+  }
+  @if (interactive()) {
+    <button type="button" class="mascot__art mascot__btn" (click)="poke()" [attr.aria-label]="label() + '. Tap to make it dance'" [innerHTML]="svg()"></button>
+  } @else {
+    <span class="mascot__art" [innerHTML]="svg()"></span>
+  }
+</span>

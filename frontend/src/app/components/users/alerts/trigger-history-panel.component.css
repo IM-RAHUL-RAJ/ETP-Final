@@ -1,0 +1,70 @@
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(10, 10, 14, 0.4);
+  animation: fadeIn var(--enter) ease-out;
+}
+
+.panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 91;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: min(420px, 100vw);
+  padding: 24px;
+  overflow: auto;
+  border-left: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  animation: slideInRight var(--enter) var(--ease);
+}
+
+.panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.triggers {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.trigger {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+
+.dot.idle {
+  background: var(--slate);
+}
+
+.trigger__main {
+  display: grid;
+  gap: 2px;
+}
+
+.trigger__status {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.back {
+  margin-top: auto;
+  align-self: flex-start;
+}

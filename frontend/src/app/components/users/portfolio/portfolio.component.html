@@ -1,0 +1,298 @@
+<section class="page" data-testid="portfolio-page">
+  <header class="head">
+    <div>
+      <h1>Portfolio</h1>
+      @if (summary(); as s) {
+        <p class="muted" data-testid="portfolio-asof">
+          Valued {{ s.asOf | date: 'd MMM y, HH:mm:ss' }}. All totals are in {{ s.baseCurrency }}.
+        </p>
+      } @else {
+        <p class="muted">What you hold, what it is worth now, and how you are doing.</p>
+      }
+    </div>
+    <div class="head__actions">
+      @if (!loading() && !error() && holdingCount() > 0) {
+        <app-download-menu [filteredCount]="pricingDown() ? holdingCount() : visibleRows().length"
+                           [totalCount]="holdingCount()" [hasCharts]="!pricingDown()" [busy]="exporting()" (download)="download($event)" />
+      }
+      <button type="button" class="icon-btn" (click)="load()" [disabled]="loading()" aria-label="Refresh" data-tip="Refresh" data-tip-below data-tip-end data-testid="portfolio-refresh">
+        <app-icon name="refresh" />
+      </button>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <article class="card" aria-busy="true" aria-label="Loading portfolio">
+      <span class="skeleton short"></span><span class="skeleton"></span><span class="skeleton"></span>
+    </article>
+  } @else if (error()) {
+    <div class="banner error" role="alert" data-testid="portfolio-error">{{ error() }}</div>
+    <div><button type="button" class="secondary" (click)="load()">Try again</button></div>
+  } @else if (pricingDown()) {
+    <!-- No price for any holding: say so, and still show what is known, instead of an empty page. -->
+    <div class="banner warn" role="alert" data-testid="pricing-unavailable">
+      <strong>Prices are not available right now.</strong>
+      Your holdings are shown at what they cost you, not what they are worth. Your orders are not affected.
+    </div>
+
+    @if (cash(); as balance) {
+      <article class="card tile tile--wide">
+        <p class="tile__label muted">Cash</p>
+        <p class="tile__value">{{ balance.cashBalance | number: '1.2-2' }} <span class="unit">{{ balance.currency }}</span></p>
+      </article>
+    }
+
+    <article class="card">
+      <h2>Holdings at cost</h2>
+      @if (fallbackRows().length === 0) {
+        <app-empty-state title="No holdings yet" message="Place an order to start building your portfolio." [size]="110">
+          <a class="button" routerLink="/order-ticket">Place an order</a>
+        </app-empty-state>
+      } @else {
+        <table data-testid="fallback-table">
+          <thead>
+            <tr><th>Instrument</th><th class="num">Quantity</th><th class="num">Average cost</th><th class="num">Invested</th><th>Price</th></tr>
+          </thead>
+          <tbody>
+            @for (row of fallbackRows(); track row.symbol) {
+              <tr>
+                <td><strong>{{ row.symbol }}</strong></td>
+                <td class="num">{{ row.quantity | number }}</td>
+                <td class="num">{{ row.averageCost | number: '1.2-2' }}</td>
+                <td class="num">{{ row.costBasis | number: '1.2-2' }}</td>
+                <td><span class="pill pill--stale">Unavailable</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </article>
+  } @else if (summary(); as s) {
+
+    @if (s.partial) {
+      <div class="banner warn" role="status" data-testid="partial-banner">
+        <strong>Some holdings could not be valued.</strong>
+        {{ unpricedCount() }} of your holdings have no price right now. They are listed below and left out of
+        the current value and gain figures, so those totals are lower than the full picture.
+      </div>
+    }
+
+    <div class="tiles stagger">
+      <article class="card tile tile--hero" data-testid="tile-total">
+        <p class="tile__label muted">Total value</p>
+        <p class="tile__value">{{ s.totalValue | number: '1.2-2' }} <span class="unit">{{ s.baseCurrency }}</span></p>
+        <p class="tile__note muted">Cash plus current value</p>
+      </article>
+
+      <article class="card tile" data-testid="tile-today">
+        <p class="tile__label muted">Today</p>
+        @if (dayChange(); as d) {
+          <p class="tile__value" [attr.data-dir]="direction(d.amount)">
+            <span class="dot" [class.live]="d.amount > 0" [class.stale]="d.amount < 0" aria-hidden="true"></span>
+            {{ d.amount > 0 ? '+' : '' }}{{ d.amount | number: '1.2-2' }}
+          </p>
+          <p class="tile__note" [attr.data-dir]="direction(d.amount)">{{ d.percent > 0 ? '+' : '' }}{{ d.percent | number: '1.2-2' }}%</p>
+        } @else {
+          <p class="tile__value muted">n/a</p>
+          <p class="tile__note muted">No previous close for your holdings yet</p>
+        }
+      </article>
+
+      <article class="card tile" data-testid="tile-unrealised">
+        <p class="tile__label muted">All-time gain/loss</p>
+        @if (allTime(); as all) {
+          <p class="tile__value" [attr.data-dir]="direction(all)">
+            <span class="dot" [class.live]="all > 0" [class.stale]="all < 0" aria-hidden="true"></span>
+            {{ all > 0 ? '+' : '' }}{{ all | number: '1.2-2' }}
+          </p>
+        } @else {
+          <p class="tile__value muted">n/a</p>
+        }
+        <p class="tile__note" [attr.data-dir]="direction(allTime())">
+          @if (allTimePercent() !== null) { {{ allTimePercent()! > 0 ? '+' : '' }}{{ allTimePercent() | number: '1.2-2' }}% of invested } @else { n/a }
+        </p>
+      </article>
+
+      <article class="card tile" data-testid="tile-market">
+        <p class="tile__label muted">Current value</p>
+        <p class="tile__value">{{ s.marketValue | number: '1.2-2' }}</p>
+        <p class="tile__note muted">Invested {{ s.costBasis | number: '1.2-2' }}</p>
+      </article>
+    </div>
+
+    @if (positions().length === 0) {
+      <article class="card" data-testid="no-holdings">
+        <app-empty-state title="No holdings yet" message="You do not hold anything yet. Place your first order and your portfolio will show up here.">
+          <a class="button" routerLink="/order-ticket">Place an order</a>
+        </app-empty-state>
+      </article>
+    } @else {
+      <div class="charts">
+        <article class="card chart-card" data-testid="history-card">
+          <div class="chart-card__head">
+            <h2>Value over time</h2>
+            <div class="tabs" role="radiogroup" aria-label="Range">
+              @for (option of ranges; track option.value) {
+                <button type="button" role="radio" [class.active]="range() === option.value" [attr.aria-checked]="range() === option.value"
+                        (click)="setRange(option.value)" [attr.data-testid]="'range-' + option.value">{{ option.label }}</button>
+              }
+            </div>
+          </div>
+          @if ((history()?.points?.length ?? 0) >= 2) {
+            <app-echart [option]="historyOption()" [height]="260" label="Portfolio value over time" />
+          } @else {
+            <p class="muted chart-empty" data-testid="history-empty">
+              Your value history builds as you use Quorum: one point each time you open this page. Check back soon.
+            </p>
+          }
+        </article>
+
+        <article class="card chart-card" data-testid="allocation-card">
+          <h2>Where your money is</h2>
+          @if (hasAllocation()) {
+            <app-echart [option]="allocationOption()" [height]="260" label="Allocation of current value by holding" />
+          } @else {
+            <p class="muted chart-empty">No priced holdings to chart yet.</p>
+          }
+        </article>
+      </div>
+
+      
+
+      <article class="card">
+        <div class="table-head">
+          <h2>Holdings</h2>
+          <div class="tabs" role="tablist" aria-label="Filter holdings" data-testid="category-filters">
+            @for (option of offeredCategories(); track option) {
+              <button type="button" role="tab" [class.active]="category() === option" [attr.aria-selected]="category() === option"
+                      (click)="setCategory(option)" [attr.data-testid]="'category-' + option">
+                {{ categoryLabel(option) }}<span class="count">{{ categoryCounts()[option] }}</span>
+              </button>
+            }
+          </div>
+        </div>
+
+        <div class="scroll">
+          <table data-testid="positions-table">
+            <thead>
+              <tr>
+                <th [attr.aria-sort]="sortState('symbol')"><button type="button" class="sort" (click)="sortBy('symbol')">Instrument <app-icon name="sort" [size]="14" /></button></th>
+                <th class="num" [attr.aria-sort]="sortState('quantity')"><button type="button" class="sort" (click)="sortBy('quantity')">Quantity <app-icon name="sort" [size]="14" /></button></th>
+                <th class="num">Average cost</th>
+                <th class="num">Current price</th>
+                <th class="num" [attr.aria-sort]="sortState('invested')"><button type="button" class="sort" (click)="sortBy('invested')">Invested <app-icon name="sort" [size]="14" /></button></th>
+                <th class="num" [attr.aria-sort]="sortState('value')"><button type="button" class="sort" (click)="sortBy('value')">Current value <app-icon name="sort" [size]="14" /></button></th>
+                <th class="num" [attr.aria-sort]="sortState('gain')"><button type="button" class="sort" (click)="sortBy('gain')">Gain/Loss <app-icon name="sort" [size]="14" /></button></th>
+                <th class="num" [attr.aria-sort]="sortState('gainPct')"><button type="button" class="sort" (click)="sortBy('gainPct')">% <app-icon name="sort" [size]="14" /></button></th>
+              </tr>
+            </thead>
+            <tbody class="stagger">
+              @for (row of visibleRows(); track row.position.symbol) {
+                <tr [attr.data-testid]="'position-' + row.position.symbol" [attr.data-dir]="direction(row.gain)" class="holding"
+                    [class.row--stale]="row.freshness === 'stale'">
+                  <td>
+                    <strong>{{ row.position.symbol }}</strong>
+                    @if (mixedCurrencies()) { <span class="muted"> {{ row.position.currency }}</span> }
+                  </td>
+                  <td class="num">{{ row.position.quantity | number }}</td>
+                  <td class="num mono">{{ row.position.averageCost | number: '1.2-2' }}</td>
+                  <td class="num mono">
+                    <span class="price-cell">
+                      <span class="dot" [class]="'dot ' + (row.freshness === 'none' ? '' : row.freshness)" [title]="freshnessLabel(row)"
+                            [attr.aria-label]="freshnessLabel(row)" role="img" [attr.data-testid]="'price-' + row.freshness"></span>
+                      @if (row.position.lastPrice !== null) { {{ row.position.lastPrice | number: '1.2-2' }} } @else { <span class="muted">n/a</span> }
+                    </span>
+                  </td>
+                  <td class="num mono">{{ row.invested | number: '1.2-2' }}</td>
+                  <td class="num mono">
+                    @if (row.value !== null) { {{ row.value | number: '1.2-2' }} } @else { <span class="muted">n/a</span> }
+                  </td>
+                  <td class="num mono" [attr.data-dir]="direction(row.gain)">
+                    @if (row.gain !== null) { {{ row.gain > 0 ? '+' : '' }}{{ row.gain | number: '1.2-2' }} } @else { <span class="muted">n/a</span> }
+                  </td>
+                  <td class="num mono" [attr.data-dir]="direction(row.gainPct)">
+                    @if (row.gainPct !== null) { {{ row.gainPct > 0 ? '+' : '' }}{{ row.gainPct | number: '1.2-2' }}% } @else { <span class="muted">n/a</span> }
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="8"><span class="muted">Nothing in this category.</span></td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="legend muted">
+          <span class="dot live"></span> Live (under 5 min) <span class="dot delayed"></span> Delayed (5 to 15 min) <span class="dot stale"></span> Stale (over 15 min). Hover a dot for the exact time.
+        </p>
+      </article>
+    }
+
+    <details class="card advanced" data-testid="details">
+      <summary>Details</summary>
+      <dl class="facts">
+        <div><dt>Cash</dt><dd data-testid="tile-cash">{{ s.cashBalance | number: '1.2-2' }}</dd></div>
+        <div><dt>Invested</dt><dd>{{ s.costBasis | number: '1.2-2' }}</dd></div>
+        <div><dt>Gain/Loss on holdings</dt><dd [attr.data-dir]="direction(s.unrealisedPnl)">{{ s.unrealisedPnl | number: '1.2-2' }}</dd></div>
+        <div><dt>Gain/Loss from sales</dt><dd [attr.data-dir]="direction(s.realisedPnl)" data-testid="tile-realised">{{ s.realisedPnl | number: '1.2-2' }}</dd></div>
+        <div><dt>Holdings</dt><dd>{{ s.positionCount }}</dd></div>
+      </dl>
+    </details>
+
+    <article class="card" data-testid="pnl-card">
+      <h2>Gains from sales, by date</h2>
+      <p class="muted">
+        The date range applies to gains from sales only. The gain on what you hold is always as of now, because it
+        moves with the price.
+      </p>
+
+      <div class="range">
+        <div class="field">
+          <label for="pnl-from">From</label>
+          <input id="pnl-from" type="date" [ngModel]="from()" (ngModelChange)="from.set($event)" data-testid="pnl-from" />
+        </div>
+        <div class="field">
+          <label for="pnl-to">To</label>
+          <input id="pnl-to" type="date" [ngModel]="to()" (ngModelChange)="to.set($event)" data-testid="pnl-to" />
+        </div>
+        <label class="check">
+          <input type="checkbox" [ngModel]="bySymbol()" (ngModelChange)="toggleBySymbol($event)" data-testid="pnl-by-symbol" />
+          By instrument
+        </label>
+        <button type="button" class="secondary" (click)="applyRange()" data-testid="pnl-apply">Apply</button>
+      </div>
+
+      @if (pnlError()) {
+        <div class="banner error" role="alert" data-testid="pnl-error">{{ pnlError() }}</div>
+      }
+
+      @if (pnl(); as p) {
+        <dl class="pnl">
+          <div><dt>From sales</dt><dd [attr.data-dir]="direction(p.realisedPnl)" data-testid="pnl-realised">{{ p.realisedPnl | number: '1.2-2' }}</dd></div>
+          <div><dt>On holdings</dt><dd [attr.data-dir]="direction(p.unrealisedPnl)" data-testid="pnl-unrealised">{{ p.unrealisedPnl | number: '1.2-2' }}</dd></div>
+          <div><dt>Total</dt><dd [attr.data-dir]="direction(p.totalPnl)" data-testid="pnl-total">{{ p.totalPnl | number: '1.2-2' }} {{ p.baseCurrency }}</dd></div>
+        </dl>
+
+        @if (p.bySymbol) {
+          @if (p.bySymbol.length === 0) {
+            <p class="muted">Nothing to break down yet.</p>
+          } @else {
+            <table data-testid="pnl-symbol-table">
+              <thead>
+                <tr><th>Instrument</th><th class="num">From sales</th><th class="num">On holdings</th><th class="num">Total</th></tr>
+              </thead>
+              <tbody>
+                @for (row of p.bySymbol; track row.symbol) {
+                  <tr>
+                    <td><strong>{{ row.symbol }}</strong></td>
+                    <td class="num" [attr.data-dir]="direction(row.realisedPnl)">{{ row.realisedPnl | number: '1.2-2' }}</td>
+                    <td class="num" [attr.data-dir]="direction(row.unrealisedPnl)">{{ row.unrealisedPnl | number: '1.2-2' }}</td>
+                    <td class="num" [attr.data-dir]="direction(row.totalPnl)">{{ row.totalPnl | number: '1.2-2' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        }
+      }
+    </article>
+  }
+</section>

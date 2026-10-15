@@ -1,0 +1,91 @@
+<section class="page chat" data-testid="assistant-page">
+  <header class="head">
+    <div class="head__who">
+      <app-mascot [action]="mood()" [size]="72" [interactive]="false" data-testid="assistant-mascot" />
+      <div>
+        <h1>Ask your companion</h1>
+        <p class="muted">Questions about your own orders, positions, profit and loss, alerts and activity.</p>
+      </div>
+    </div>
+    @if (messages().length > 0) {
+      <button type="button" class="secondary" (click)="clear()" data-testid="assistant-clear"><app-icon name="refresh" [size]="16" /> New chat</button>
+    }
+  </header>
+
+  <div class="thread card" #thread role="log" aria-live="polite" aria-label="Conversation" data-testid="assistant-thread">
+    @if (messages().length === 0) {
+      <div class="hello" data-testid="assistant-hello">
+        <p><strong>Hi, I am here to help.</strong> Pick a question below or type your own. I answer from your account data, I cannot place orders, and I do not give investment advice.</p>
+      </div>
+    }
+
+    @for (message of messages(); track message.id) {
+      <div class="line" [class.line--user]="message.role === 'user'" [attr.data-role]="message.role">
+        <div class="bubble" [class.bubble--error]="message.error" [attr.data-testid]="'message-' + message.role">
+          <p>{{ message.text }}</p>
+
+          @if (message.error) {
+            <button type="button" class="secondary small" (click)="retry(message)" data-testid="assistant-retry">Try again</button>
+          }
+
+          @if (message.response?.advisoryBlocked) {
+            <div class="redirect" data-testid="assistant-redirect">
+              <span>Looking for research signals?</span>
+              <a class="button primary" [routerLink]="message.response?.redirectTo || '/advice'" data-testid="assistant-redirect-link">Open the Advice page</a>
+            </div>
+          }
+
+          @for (card of message.response?.dataCards ?? []; track card.title) {
+            <div class="data" [attr.data-kind]="card.kind" data-testid="assistant-card">
+              <h3>{{ card.title }}</h3>
+              @if (card.rows.length === 0) {
+                <p class="muted">Nothing to show.</p>
+              } @else if (card.kind === 'METRICS') {
+                <dl>
+                  @for (row of card.rows; track $index) {
+                    <div><dt>{{ row[0] }}</dt><dd>{{ row[1] }}</dd></div>
+                  }
+                </dl>
+              } @else {
+                <div class="scroll">
+                  <table>
+                    <thead><tr>@for (column of card.columns; track column) { <th scope="col">{{ column }}</th> }</tr></thead>
+                    <tbody>
+                      @for (row of card.rows; track $index) {
+                        <tr data-testid="assistant-row">@for (cell of row; track $index) { <td>{{ cell }}</td> }</tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </div>
+          }
+
+          @if (message.response && message.response.citations.length > 0) {
+            <p class="source muted" data-testid="assistant-source">From your {{ message.response.citations.join(', ') }}</p>
+          }
+        </div>
+      </div>
+    }
+
+    @if (loading()) {
+      <div class="line" data-testid="assistant-loading" aria-busy="true">
+        <div class="bubble bubble--typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+      </div>
+    }
+  </div>
+
+  <div class="chips" role="group" aria-label="Quick questions" data-testid="assistant-chips">
+    @for (action of quickActions(); track action.id) {
+      <button type="button" class="chip" [disabled]="loading()" (click)="askQuick(action)" [attr.data-testid]="'chip-' + action.id">{{ action.label }}</button>
+    }
+  </div>
+
+  <form class="composer" (submit)="$event.preventDefault(); send()">
+    <label class="sr-only" for="assistant-input">Your question</label>
+    <textarea id="assistant-input" rows="1" [attr.maxlength]="maxLength" placeholder="Ask about your orders, positions or profit and loss"
+              [value]="draft()" (input)="onInput($any($event.target).value)" (keydown)="onKey($event)" data-testid="assistant-input"></textarea>
+    <button type="submit" class="primary" [disabled]="!canSend()" data-testid="assistant-send">Send</button>
+  </form>
+  <p class="muted fine">Answers come from your account data and are not investment advice.</p>
+</section>

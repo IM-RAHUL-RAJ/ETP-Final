@@ -1,0 +1,97 @@
+:host {
+  position: fixed;
+  right: 16px;
+  /* above the chat bubble in the corner */
+  bottom: 88px;
+  z-index: 90;
+  pointer-events: none;
+}
+
+/* Bubbles to the left of the companion, both along the bottom edge, so nothing sits on top of the page text for long. */
+.dock {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 8px;
+  animation: dockIn 320ms steps(6, end);
+}
+
+.dock__mascot {
+  flex: none;
+  pointer-events: auto;
+}
+
+.dock__bubbles {
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+  width: min(300px, calc(100vw - 112px));
+}
+
+@keyframes dockIn {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+}
+
+/* A speech bubble in pixel style: square, a hard border, a hard shadow. */
+.bubble {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  padding: 10px 28px 10px 14px;
+  border: 2px solid var(--text);
+  border-radius: 0;
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 4px 4px 0 var(--text);
+  pointer-events: auto;
+  animation: bubblePop 280ms steps(5, end);
+}
+
+.bubble[data-tone='error'] {
+  border-color: var(--reject);
+  box-shadow: 4px 4px 0 var(--reject);
+}
+
+.bubble__title {
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.bubble__text {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.bubble__close {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  color: var(--muted);
+  font-size: 14px;
+  border-radius: 0;
+}
+
+.bubble__close:hover {
+  color: var(--text);
+}
+
+@keyframes bubblePop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.9);
+  }
+}
+
+@media (max-width: 600px) {
+  :host {
+    right: 4px;
+    bottom: 4px;
+  }
+}

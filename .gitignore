@@ -1,0 +1,25 @@
+target/
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.DS_Store
+Thumbs.db
+*.log
+package-lock.json
+!services/auth_service/package-lock.json
+node_modules
+.env
+env.txt
+
+.vscode/
+
+# Local deployment reference clone and generated deployment credentials.
+DEPLOY-KIT/
+certs/global-bundle.pem
+k8s/base/secrets.env
+
+data/
+
+*.txt

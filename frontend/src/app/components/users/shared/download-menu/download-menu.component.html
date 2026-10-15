@@ -1,0 +1,39 @@
+<div class="dl" data-testid="download-menu">
+  <button type="button" class="secondary dl__button" (click)="toggle()" [disabled]="busy()"
+          [attr.aria-expanded]="open()" aria-haspopup="true" aria-label="Download" title="Download"
+          data-testid="download-toggle">
+    <svg viewBox="0 0 20 20" class="glyph" aria-hidden="true">
+      <path d="M10 3v10M6 9.5 10 13.5l4-4M4 16h12" />
+    </svg>
+    {{ busy() ? 'Preparing...' : 'Download' }}
+  </button>
+
+  @if (open()) {
+    <div class="dl__panel" role="menu" data-testid="download-panel">
+      @if (filterIsNarrower()) {
+        <fieldset class="dl__scope">
+          <legend>Include</legend>
+          <label>
+            <input type="radio" name="scope" [checked]="scope() === 'filtered'" (change)="scope.set('filtered')" data-testid="scope-filtered" />
+            Current filter ({{ filteredCount() }})
+          </label>
+          <label>
+            <input type="radio" name="scope" [checked]="scope() === 'all'" (change)="scope.set('all')" data-testid="scope-all" />
+            Everything ({{ totalCount() }})
+          </label>
+        </fieldset>
+      }
+      @if (hasCharts()) {
+        <label class="dl__charts">
+          <input type="checkbox" [checked]="includeCharts()" (change)="includeCharts.set(!includeCharts())" data-testid="include-charts" />
+          Include charts (PDF)
+        </label>
+      }
+      @for (format of formats; track format.id) {
+        <button type="button" role="menuitem" class="dl__item" (click)="pick(format.id)" [attr.data-testid]="'download-' + format.id">
+          <strong>{{ format.label }}</strong> <span>{{ format.hint }}</span>
+        </button>
+      }
+    </div>
+  }
+</div>

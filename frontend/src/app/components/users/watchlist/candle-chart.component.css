@@ -1,0 +1,70 @@
+:host {
+  display: block;
+}
+
+.chart {
+  display: grid;
+  gap: 12px;
+}
+
+.chart__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.legend--pinned {
+  padding: 2px 8px;
+  border: 2px solid var(--text);
+}
+
+.legend b {
+  font-weight: 800;
+}
+
+.chart__stage {
+  position: relative;
+  min-height: 320px;
+}
+
+.chart__canvas {
+  width: 100%;
+  height: 320px;
+}
+
+.chart__canvas--hidden {
+  visibility: hidden;
+}
+
+.chart__note {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 12px;
+  justify-items: center;
+  text-align: center;
+}
+
+.chart__note .skeleton {
+  width: 220px;
+  height: 120px;
+}
+
+@media (max-width: 600px) {
+  .chart__stage,
+  .chart__canvas {
+    min-height: 260px;
+    height: 260px;
+  }
+}

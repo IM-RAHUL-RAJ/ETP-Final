@@ -1,0 +1,135 @@
+<section class="page" data-testid="account-page">
+  @if (showChangePassword()) {
+    <app-modal title="Change password" mascot="think" (closed)="toggleChangePassword()">
+      <app-change-password (passwordChanged)="handlePasswordChanged()" />
+    </app-modal>
+  }
+
+  @if (loading()) {
+    <article class="card" aria-busy="true" aria-label="Loading account">
+      <span class="skeleton short"></span><span class="skeleton"></span><span class="skeleton"></span>
+    </article>
+    <article class="card"><span class="skeleton short"></span><span class="skeleton tall"></span></article>
+  } @else if (error()) {
+    <div class="banner error" role="alert">{{ error() }}</div>
+    <div><button type="button" class="secondary" (click)="loadAccount()">Try again</button></div>
+  } @else {
+    <article class="card profile">
+      <span class="profile__avatar" aria-hidden="true" data-testid="account-avatar">{{ initial() }}</span>
+      <div class="profile__body">
+        <h1 data-testid="account-holder">{{ account()?.holderName }}</h1>
+        <p class="muted">
+          <span class="mono" data-testid="account-id">{{ account()?.accountId }}</span>
+          &middot;
+          <span class="pill" [class.pill--off]="account()?.status !== 'ACTIVE'"><span class="pill__dot"></span>{{ account()?.status }}</span>
+          &middot; Updated {{ account()?.lastUpdated | date: 'd MMM y, HH:mm' }}
+        </p>
+      </div>
+      <button type="button" class="secondary" (click)="toggleChangePassword()">
+        <app-icon name="shield" [size]="16" /> Change password
+      </button>
+    </article>
+
+    <article class="card balance">
+      <div class="balance__figure">
+        <p class="muted">Cash balance</p>
+        <p class="balance__value" data-testid="account-cash">
+          <app-animated-number [value]="balance()?.cashBalance ?? 0" [decimals]="2" />
+          <span class="balance__unit">{{ balance()?.currency }}</span>
+        </p>
+        @if (balance()?.asOf; as asOf) {
+          <p class="muted fine">As of {{ asOf | date: 'd MMM y, HH:mm' }}</p>
+        }
+      </div>
+      <div class="balance__actions">
+        <button type="button" class="primary lg" (click)="openFunds('deposit')" data-testid="add-funds">
+          <app-icon name="arrowDownLeft" [size]="20" /> Add funds
+        </button>
+        <button type="button" class="secondary lg" (click)="openFunds('withdraw')" data-testid="withdraw-funds">
+          <app-icon name="arrowUpRight" [size]="20" /> Withdraw
+        </button>
+      </div>
+    </article>
+
+    <article class="card insights">
+      <div class="head-row">
+        <h2>Asset mix</h2>
+        <span class="muted">By asset class (invested cost)</span>
+      </div>
+      @if (rows().length === 0) {
+        <app-empty-state title="No asset mix yet" message="The chart appears once your filled buy orders create holdings." [size]="100">
+          <a class="button" routerLink="/order-ticket">Place an order</a>
+        </app-empty-state>
+      } @else {
+        <div class="insights__body">
+          <app-donut-chart [slices]="assetClassSlices()" [unit]="balance()?.currency ?? ''" centreLabel="Exposure" />
+          <div class="insights__side">
+            <div class="hhi">
+              <p class="hhi__label">
+                Diversification score (HHI)
+                <button type="button" class="icon-btn info" (click)="toggleHhiInfo()" [attr.aria-expanded]="hhiInfoOpen()"
+                        aria-label="About the HHI score" data-testid="hhi-info">i</button>
+              </p>
+              <p>
+                <strong class="tabular hhi__value" data-testid="hhi-value">{{ concentrationHhi() | number: '1.0-0' }}</strong>
+                <span class="hhi__band"> {{ concentrationBand() }}</span>
+              </p>
+              @if (hhiInfoOpen()) {
+                <div class="popover" role="note" data-testid="hhi-popover">
+                  <span>&lt; 1,500 &mdash; Unconcentrated</span>
+                  <span>1,500&ndash;2,500 &mdash; Moderately concentrated</span>
+                  <span>&gt; 2,500 &mdash; Highly concentrated</span>
+                  <p class="muted fine">It sums the squared share of each holding, by cost. Lower means a wider spread.</p>
+                  <a href="https://www.investopedia.com/terms/h/hhi.asp" target="_blank" rel="noopener noreferrer">Learn about concentration risk</a>
+                </div>
+              }
+            </div>
+            <ul class="mix-list">
+              @for (slice of assetClassSlices(); track slice.label) {
+                <li><span>{{ slice.label }}</span><span class="tabular">{{ slice.share | number: '1.1-1' }}%</span></li>
+              }
+            </ul>
+          </div>
+        </div>
+      }
+    </article>
+
+    <article class="card table-card">
+      <div class="head-row">
+        <h2>Positions</h2>
+        <span class="muted" data-testid="account-invested">{{ invested() | number: '1.2-2' }} {{ balance()?.currency }} invested at cost</span>
+      </div>
+      @if (rows().length === 0) {
+        <app-empty-state title="No positions yet" message="Filled buy orders create positions." [size]="100">
+          <a class="button" routerLink="/order-ticket">Place an order</a>
+        </app-empty-state>
+      } @else {
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Symbol</th>
+              <th scope="col" class="num">Quantity</th>
+              <th scope="col" class="num">Average cost ({{ balance()?.currency }})</th>
+              <th scope="col" class="num">Cost value</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of rows(); track row.symbol) {
+              <tr data-testid="position-row">
+                <td><strong>{{ row.symbol }}</strong></td>
+                <td class="tabular num">{{ row.quantity }}</td>
+                <td class="tabular num">{{ row.averageCostHome | number: '1.2-2' }}</td>
+                <td class="tabular num">{{ row.cost | number: '1.2-2' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </article>
+  }
+
+  @if (fundsDialog(); as kind) {
+    <app-funds-dialog [kind]="kind" [balance]="balance()?.cashBalance ?? 0" [currency]="balance()?.currency ?? ''"
+                      (done)="onFundsDone($event)" (closed)="fundsDialog.set(null)" />
+  }
+</section>

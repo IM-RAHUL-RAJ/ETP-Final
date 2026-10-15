@@ -1,0 +1,265 @@
+:host {
+  display: block;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.header h1 {
+  margin-bottom: 4px;
+}
+
+.header__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filter-toggle {
+  position: relative;
+}
+
+.filter-toggle__count {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  padding: 0 4px;
+  background: var(--signal);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 16px;
+  text-align: center;
+}
+
+.spin {
+  animation: spin 1s steps(8, end) infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* The filters: a status switcher, a date range, and (in the table head) a box per column. They open from the icon. */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  animation: filtersIn 220ms var(--ease);
+}
+
+.chip {
+  height: 32px;
+  padding: 0 12px;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+
+.chip:hover {
+  color: var(--text);
+  background: var(--muted-bg);
+}
+
+.chip.active {
+  color: var(--on-accent);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.chip__count {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.date-panel {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  animation: filtersIn 220ms var(--ease);
+}
+
+.date-panel__head,
+.date-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.date-panel__inputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.date-panel__inputs label {
+  margin: 0;
+}
+
+.date-panel__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.date-preset,
+.clear-filters-btn {
+  height: 30px;
+  padding: 0 12px;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+
+.date-preset:hover,
+.clear-filters-btn:hover:not(:disabled) {
+  background: var(--muted-bg);
+}
+
+.date-preset.active {
+  color: var(--on-accent);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+@keyframes filtersIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+/* The table */
+.table-card {
+  padding: 0;
+  overflow-x: auto;
+}
+
+.table-card th,
+.table-card td {
+  padding: 14px 16px;
+}
+
+.num {
+  text-align: right;
+}
+
+.act {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.filter-row th {
+  padding: 8px 12px;
+  background: var(--surface-2);
+  animation: filtersIn 220ms var(--ease);
+}
+
+.filter-row input,
+.filter-row select {
+  height: 32px;
+  font-size: 13px;
+}
+
+.filter-row select {
+  min-width: 84px;
+  padding-right: 28px;
+}
+
+.ccy {
+  margin-left: 6px;
+  padding: 0 6px;
+  font-size: 11px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+.side {
+  font-weight: 800;
+  color: var(--ok);
+}
+
+.side--sell {
+  color: var(--reject);
+}
+
+.none-row td {
+  padding: 28px;
+  text-align: center;
+}
+
+/* Cancelling an order, with a confirmation in the row. */
+.cancel-btn {
+  height: 30px;
+  padding: 0 10px;
+  font-size: 13px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+.cancel-btn svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.cancel-btn:hover {
+  color: var(--reject);
+  background: var(--reject-bg);
+}
+
+.confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.confirm__ask {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.mini {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 13px;
+  border: 1px solid var(--line);
+}
+
+.yes-cancel {
+  color: var(--reject);
+  background: var(--reject-bg);
+  border-color: transparent;
+}
+
+.notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.notice__close {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 18px;
+  color: inherit;
+}

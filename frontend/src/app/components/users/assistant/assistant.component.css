@@ -1,0 +1,210 @@
+:host {
+  display: block;
+}
+
+.chat {
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.head__who {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.head h1 {
+  margin-bottom: 2px;
+}
+
+.thread {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  height: min(44vh, 440px);
+  min-height: 280px;
+  padding: 18px;
+  overflow-y: auto;
+}
+
+.hello {
+  padding: 14px 16px;
+  background: var(--muted-bg);
+  border: 1px dashed var(--line);
+}
+
+.line {
+  display: flex;
+}
+
+.line--user {
+  justify-content: flex-end;
+}
+
+.bubble {
+  display: grid;
+  gap: 10px;
+  max-width: min(100%, 680px);
+  padding: 12px 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.line--user .bubble {
+  color: var(--on-accent);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.bubble--error {
+  border-color: var(--reject);
+}
+
+.bubble p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.redirect {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--amber-bg);
+  border: 1px solid var(--line);
+}
+
+.data h3 {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+
+.data dl {
+  display: grid;
+  margin: 0;
+}
+
+.data dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--line);
+}
+
+.data dl div:last-child {
+  border-bottom: none;
+}
+
+.data dt {
+  color: var(--muted);
+}
+
+.data dd {
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.scroll {
+  overflow-x: auto;
+}
+
+.data table {
+  width: 100%;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.source,
+.fine {
+  font-size: 12px;
+}
+
+.bubble--typing {
+  display: flex;
+  gap: 6px;
+  padding: 14px 18px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  background: var(--muted);
+  animation: blink 1s steps(2) infinite;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  height: auto;
+  padding: 8px 12px;
+  font-weight: 600;
+  text-align: left;
+  white-space: normal;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.chip:hover:not(:disabled) {
+  border-color: var(--text);
+}
+
+.composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.composer textarea {
+  flex: 1;
+  min-height: 44px;
+  max-height: 140px;
+  resize: vertical;
+}
+
+@media (max-width: 600px) {
+  .head {
+    flex-wrap: wrap;
+  }
+
+  .thread {
+    height: 50vh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    animation: none;
+  }
+}

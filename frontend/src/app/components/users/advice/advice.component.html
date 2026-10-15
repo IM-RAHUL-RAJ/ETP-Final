@@ -1,0 +1,117 @@
+<section class="page" data-testid="advice-page">
+  <header class="head">
+    <div>
+      <h1>Trade advice</h1>
+      <p class="muted">Signals for what you hold and watch, with the market behind each one. Advice only: it never places an order.</p>
+    </div>
+    <button type="button" class="icon-btn" (click)="load()" [disabled]="loading()" aria-label="Refresh advice" data-tip="Refresh" data-tip-end data-testid="advice-refresh">
+      <app-icon name="refresh" />
+    </button>
+  </header>
+
+  @if (loading()) {
+    <article class="card" aria-busy="true" aria-label="Loading advice">
+      <span class="skeleton short"></span><span class="skeleton"></span><span class="skeleton"></span>
+    </article>
+  } @else if (error()) {
+    <div class="banner error" role="alert" data-testid="advice-error">{{ error() }}</div>
+    <div><button type="button" class="secondary" (click)="load()">Try again</button></div>
+  } @else if (items().length === 0) {
+    <article class="card" data-testid="advice-empty">
+      <app-empty-state title="Nothing to advise on yet" message="Hold something or add an instrument to your watchlist and its signal appears here.">
+        <a class="button" routerLink="/watchlist">Open watchlist</a>
+      </app-empty-state>
+    </article>
+  } @else {
+    <article class="card mood" data-testid="market-mood" [attr.data-tone]="mood().tone">
+      <div class="mood__head">
+        <div>
+          <p class="muted">Market mood across your instruments</p>
+          <h2 data-testid="mood-label">{{ mood().label }}</h2>
+        </div>
+        <p class="muted mood__counts">
+          <span class="up">{{ mood().bullish }} bullish</span> &middot; {{ mood().neutral }} neutral &middot; <span class="down">{{ mood().bearish }} bearish</span>
+        </p>
+      </div>
+      @if (mood().total > 0) {
+        <div class="bar" role="img" [attr.aria-label]="mood().bullishPercent + '% bullish, ' + mood().neutralPercent + '% neutral, ' + mood().bearishPercent + '% bearish'">
+          <span class="bar__up" [style.width.%]="mood().bullishPercent"></span>
+          <span class="bar__flat" [style.width.%]="mood().neutralPercent"></span>
+          <span class="bar__down" [style.width.%]="mood().bearishPercent"></span>
+        </div>
+      }
+      <p class="muted fine">Bullish: the price is above its short average, which is above its long average. Bearish: the reverse.</p>
+    </article>
+
+    <div class="tabs" role="tablist" aria-label="Filter by signal">
+      @for (tab of tabs(); track tab.id) {
+        <button type="button" role="tab" [class.active]="filter() === tab.id" [attr.aria-selected]="filter() === tab.id"
+                (click)="setFilter(tab.id)" [attr.data-testid]="'advice-filter-' + tab.id">{{ tab.label }}<span class="count">{{ tab.count }}</span></button>
+      }
+    </div>
+
+    <ul class="list stagger">
+      @for (item of visible(); track item.symbol) {
+        <li class="card item" [attr.data-signal]="item.signal" [attr.data-testid]="'advice-' + item.symbol">
+          <div class="item__head">
+            <app-mascot [action]="mascotMood(item)" [size]="56" [interactive]="false" />
+            <h2>{{ item.symbol }}</h2>
+            @if (item.indicators?.trend; as trend) {
+              <span class="trend" [attr.data-trend]="trend" data-testid="advice-trend">
+                {{ trend === 'BULLISH' ? '&#9650;' : trend === 'BEARISH' ? '&#9660;' : '&#9644;' }} {{ trendLabel(trend) }}
+              </span>
+            }
+            <span class="signal" [attr.data-signal]="item.signal" data-testid="advice-signal">{{ label(item.signal) }}</span>
+          </div>
+
+          @if (item.indicators; as ind) {
+            <dl class="metrics" data-testid="advice-indicators">
+              <div><dt>Price</dt><dd>{{ ind.lastPrice | number: '1.2-2' }}</dd></div>
+              <div><dt>{{ ind.shortPeriod }}-day average</dt><dd>{{ ind.shortAverage === null ? 'n/a' : (ind.shortAverage | number: '1.2-2') }}</dd></div>
+              <div><dt>{{ ind.longPeriod }}-day average</dt><dd>{{ ind.longAverage === null ? 'n/a' : (ind.longAverage | number: '1.2-2') }}</dd></div>
+              <div>
+                <dt>Momentum ({{ ind.shortPeriod }}d)</dt>
+                <dd [class.up]="(ind.momentumPercent ?? 0) > 0" [class.down]="(ind.momentumPercent ?? 0) < 0">
+                  {{ ind.momentumPercent === null ? 'n/a' : (ind.momentumPercent > 0 ? '+' : '') + (ind.momentumPercent | number: '1.2-2') + '%' }}
+                </dd>
+              </div>
+              <div><dt>Volatility</dt><dd>{{ ind.volatilityPercent === null ? 'n/a' : (ind.volatilityPercent | number: '1.2-2') + '%' }}</dd></div>
+            </dl>
+
+            @if (ind.rsi !== null) {
+              <div class="rsi" data-testid="advice-rsi">
+                <div class="rsi__head"><span>RSI (14)</span><strong>{{ ind.rsi | number: '1.0-0' }} <span class="muted">{{ ind.rsiState === 'OVERBOUGHT' ? 'overbought' : ind.rsiState === 'OVERSOLD' ? 'oversold' : 'normal' }}</span></strong></div>
+                <div class="rsi__bar" role="img" [attr.aria-label]="'RSI ' + ind.rsi">
+                  <span class="rsi__zone rsi__zone--low"></span><span class="rsi__zone rsi__zone--mid"></span><span class="rsi__zone rsi__zone--high"></span>
+                  <span class="rsi__marker" [style.left.%]="rsiPosition(ind.rsi)"></span>
+                </div>
+              </div>
+            }
+          }
+
+          @if (charts()[item.symbol]) {
+            <button type="button" class="ghost chart-toggle" (click)="toggleChart(item.symbol)" [attr.aria-expanded]="open().has(item.symbol)" data-testid="advice-chart-toggle">
+              <app-icon name="candles" [size]="16" /> {{ open().has(item.symbol) ? 'Hide chart' : 'Show chart' }}
+            </button>
+            @if (open().has(item.symbol)) {
+              <app-echart [option]="charts()[item.symbol]" [height]="200" [label]="item.symbol + ' price with moving averages'" data-testid="advice-chart" />
+            }
+          }
+
+          <ul class="why" data-testid="advice-reasoning">
+            @for (line of item.reasoning; track $index) {
+              <li>{{ line }}</li>
+            }
+          </ul>
+        </li>
+      } @empty {
+        <li class="card"><span class="muted">No instruments with this signal.</span></li>
+      }
+    </ul>
+
+    <p class="muted fine" data-testid="advice-disclaimer">
+      Based on daily closing prices, simple moving averages and the RSI{{ asOf() ? ', as of ' + (asOf() | date: 'd MMM y, HH:mm') : '' }}.
+      This is research, not a recommendation to trade; you decide.
+    </p>
+  }
+</section>

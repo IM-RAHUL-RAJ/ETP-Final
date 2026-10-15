@@ -1,0 +1,21 @@
+{
+  "$schema": "./node_modules/@openapitools/openapi-generator-cli/config.schema.json",
+  "spaces": 2,
+  "generator-cli": {
+    "version": "7.17.0",
+    "generators": {
+      "auth-api": {
+        "generatorName": "typescript-angular",
+        "inputSpec": "../contracts/auth-api.yaml",
+        "output": "src/generated/auth-api",
+        "skipValidateSpec": true,
+        "additionalProperties": {
+          "ngVersion": "20.0.0",
+          "providedIn": "root",
+          "stringEnums": true,
+          "withInterfaces": true
+        }
+      }
+    }
+  }
+}

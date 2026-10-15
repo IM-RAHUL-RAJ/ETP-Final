@@ -1,0 +1,45 @@
+<app-modal [title]="editing() ? 'Edit Alert' : 'Create Alert'" mascot="wave" size="wide" (closed)="closed.emit()">
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate data-testid="alert-form">
+    <p class="muted intro">Get told the moment a price meets your condition. It reaches you the way you set in Settings.</p>
+
+    @if (error()) {
+      <div class="banner error" role="alert" data-testid="alert-create-error">{{ error() }}</div>
+    }
+
+    <div class="sentence">
+      <span class="word">If price of</span>
+      <div>
+        <app-select formControlName="symbol" [options]="instrumentOptions()" [invalid]="form.controls.symbol.touched && form.controls.symbol.invalid"
+                    placeholder="Select instrument" searchPlaceholder="Search by symbol or name" emptyText="No instrument matches."
+                    testId="alert-symbol" ariaLabel="Instrument" />
+        @if (form.controls.symbol.touched && form.controls.symbol.invalid) {
+          <span class="field-error">Choose an instrument from the list.</span>
+        }
+      </div>
+
+      <span class="word">is</span>
+      <app-select formControlName="condition" [options]="conditionOptions" testId="alert-condition" ariaLabel="Operator" [allowCustom]="false" />
+
+      <span class="word">than</span>
+      <div>
+        <div class="price">
+          <input type="text" inputmode="decimal" formControlName="price" placeholder="Price" autocomplete="off" aria-label="Price"
+                 [class.invalid]="form.controls.price.touched && form.controls.price.invalid" data-testid="alert-price" />
+          @if (currency()) {
+            <span class="pill-ccy" [attr.data-ccy]="currency()" data-testid="alert-currency">{{ currency() }}</span>
+          }
+        </div>
+        @if (form.controls.price.touched && form.controls.price.invalid) {
+          <span class="field-error" data-testid="alert-price-error">Enter a price above zero, with at most four decimals.</span>
+        }
+      </div>
+    </div>
+
+    <div class="modal__actions">
+      <button type="button" class="secondary" (click)="closed.emit()" data-testid="alert-cancel">Cancel</button>
+      <button type="submit" class="primary" [disabled]="saving()" data-testid="alert-save">
+        @if (saving()) { Saving... } @else if (editing()) { Update } @else { Create }
+      </button>
+    </div>
+  </form>
+</app-modal>

@@ -1,0 +1,53 @@
+<div class="landing">
+  <header class="bar">
+    <app-brand-logo [size]="30" />
+    <div class="bar__actions">
+      <button type="button" class="icon-btn" (click)="toggleTheme()" data-testid="landing-theme"
+              [attr.aria-label]="currentTheme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
+              [attr.data-tip]="currentTheme() === 'dark' ? 'Light theme' : 'Dark theme'" data-tip-below data-tip-end>
+        <app-icon [name]="currentTheme() === 'dark' ? 'sun' : 'moon'" [size]="20" />
+      </button>
+      <a routerLink="/sign-in" class="button secondary" data-testid="landing-sign-in">Sign in</a>
+    </div>
+  </header>
+
+  <main class="hero">
+    <div class="copy">
+      <span class="eyebrow">Enterprise trading platform</span>
+      <h1>Trade with clarity, from order ticket to final fill.</h1>
+      <p class="lead">Orders, watchlist, alerts and portfolio in one calm workspace, with a little friend to keep you company.</p>
+      <div class="actions">
+        <a routerLink="/sign-in" class="button primary lg" data-testid="sign-in-button">Login to trading desk <span aria-hidden="true">&rarr;</span></a>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="stage__mascot"><app-mascot [size]="200" action="dance" /></div>
+      <div class="stage__bubble" aria-hidden="true">Ready when you are!</div>
+    </div>
+  </main>
+
+  <!-- <section class="features" aria-label="What you get">
+    @for (feature of features; track feature.title) {
+      <article class="card feature">
+        <app-icon [name]="feature.icon" [size]="26" />
+        <h2>{{ feature.title }}</h2>
+        <p class="muted">{{ feature.text }}</p>
+      </article>
+    }
+  </section> -->
+
+  <div class="ticker" aria-hidden="true">
+    <marquee class="ticker__marquee" behavior="scroll" direction="left" scrollamount="5" onmouseover="this.stop()" onmouseout="this.start()">
+      @for (copy of [0, 1, 2]; track copy) {
+        @for (tick of ticks; track tick.symbol) {
+          <span class="ticker__item">
+            <span class="ticker__symbol">{{ tick.symbol }}</span>
+            <span class="ticker__price">{{ tick.price }}</span>
+            <span [class.up]="tick.up" [class.dn]="!tick.up" class="ticker__change">{{ tick.up ? '▲' : '▼' }} {{ tick.change }}</span>
+          </span>
+        }
+      }
+    </marquee>
+  </div>
+</div>

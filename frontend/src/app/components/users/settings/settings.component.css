@@ -1,0 +1,154 @@
+:host {
+  display: block;
+}
+
+/* A centred column: settings are read top to bottom, not scanned across. */
+.settings {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 32px 0;
+  gap: 24px;
+}
+
+.section {
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+}
+
+.row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.rows {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.rows > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+}
+
+.rows > div:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+dt {
+  color: var(--muted);
+}
+
+dd {
+  margin: 0;
+}
+
+.locked {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+
+.tabs {
+  justify-self: start;
+}
+
+.tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kinds {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color var(--fast) ease-out;
+}
+
+.check:hover {
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+}
+
+.check input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+
+.channel p {
+  margin-top: 2px;
+}
+
+.small {
+  font-size: 12px;
+}
+
+.mascots {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.mascot-card {
+  display: grid;
+  /* A card holding a picture is taller than the 38px every button gets. */
+  height: auto;
+  white-space: normal;
+  justify-items: center;
+  gap: 8px;
+  padding: 16px 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  color: var(--text);
+  font-weight: 500;
+  transition:
+    border-color var(--fast) ease-out,
+    background-color var(--fast) ease-out,
+    transform var(--fast) ease-out;
+}
+
+.mascot-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
+  background: var(--surface);
+}
+
+.mascot-card--on {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--ring);
+  background: var(--surface);
+}
+
+@media (max-width: 600px) {
+  .settings {
+    padding: 16px 0;
+  }
+
+  .section {
+    padding: 16px;
+  }
+}

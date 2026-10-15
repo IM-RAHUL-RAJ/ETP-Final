@@ -1,0 +1,26 @@
+<div class="app-shell shell" [class.app-shell--sidebar]="showHeader()">
+  @if (showHeader()) {
+    <app-sidebar />
+  }
+  <div class="app-frame" [class.app-frame--bare]="!showHeader()">
+    @if (showHeader()) {
+      <app-app-header />
+    }
+    @if (showPasswordBanner()) {
+      <div class="banner warn password-banner" role="alert" data-testid="password-banner">
+        <strong>You are still on your temporary password.</strong>
+        Choose your own on your Profile page.
+        <a routerLink="/profile">Change it now</a>
+      </div>
+    }
+    <main class="app-content shell__content" id="main">
+      <router-outlet />
+    </main>
+  </div>
+  @if (showLauncher()) {
+    <app-chat-launcher />
+  }
+  @if (showDock()) {
+    <app-mascot-dock />
+  }
+</div>

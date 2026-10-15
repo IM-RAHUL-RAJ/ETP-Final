@@ -1,0 +1,50 @@
+.intro {
+  margin: 0 0 var(--sp-2);
+  font-size: 14px;
+}
+
+/* The sentence runs down the page: the little words on the left, the controls on the right, room to breathe. */
+.sentence {
+  display: grid;
+  grid-template-columns: 124px minmax(0, 1fr);
+  align-items: start;
+  gap: 18px 16px;
+  margin: var(--sp-3) 0 var(--sp-1);
+}
+
+.word {
+  display: flex;
+  align-items: center;
+  height: 38px;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.price {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.price input {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.price .pill-ccy {
+  flex: none;
+  padding: 7px 12px;
+  font-size: 14px;
+}
+
+@media (max-width: 520px) {
+  .sentence {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .word {
+    height: auto;
+    margin-top: 10px;
+  }
+}

@@ -1,0 +1,83 @@
+<section class="page" data-testid="notifications-page">
+  <header class="head">
+    <div>
+      <h1>Inbox</h1>
+      <p class="muted">Messages about your orders, price alerts and funds, including ones you missed.</p>
+    </div>
+    <div class="head__actions">
+      <button type="button" class="secondary" [class.active]="unreadOnly()" [attr.aria-pressed]="unreadOnly()"
+              (click)="toggleUnread()" data-testid="filter-unread">
+        Unread only ({{ unreadCount() }})
+      </button>
+      <button type="button" class="primary" (click)="markAllRead()" [disabled]="unreadCount() === 0 || busyId() !== null"
+              data-testid="mark-all-read">
+        <app-icon name="check" [size]="18" /> Read all
+      </button>
+    </div>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Filter messages by type" data-testid="type-tabs">
+    @for (tab of tabs(); track tab.id) {
+      <button type="button" role="tab" [class.active]="type() === tab.id" [attr.aria-selected]="type() === tab.id"
+              (click)="setType(tab.id)" [attr.data-testid]="'tab-' + tab.id">
+        {{ tab.label }}<span class="count" [attr.data-testid]="'count-' + tab.id">{{ tab.count }}</span>
+      </button>
+    }
+  </div>
+
+  @if (actionError()) {
+    <div class="banner error" role="alert" data-testid="notifications-action-error">{{ actionError() }}</div>
+  }
+
+  @if (loading()) {
+    <article class="card" aria-busy="true" aria-label="Loading messages">
+      <span class="skeleton short"></span><span class="skeleton"></span><span class="skeleton"></span>
+    </article>
+  } @else if (error()) {
+    <div class="banner error" role="alert" data-testid="notifications-error">{{ error() }}</div>
+    <div><button type="button" class="secondary" (click)="load()">Try again</button></div>
+  } @else if (visible().length === 0) {
+    <article class="card" data-testid="notifications-empty">
+      @if (unreadOnly()) {
+        <app-empty-state title="You are all caught up" message="No unread messages. We will tell you here when something happens." />
+      } @else {
+        <app-empty-state title="No messages yet"
+          message="We will tell you here when an order fills, is rejected or is cancelled, when a price alert fires, and when your balance changes." />
+      }
+    </article>
+  } @else {
+    <ul class="list stagger">
+      @for (item of visible(); track item.id) {
+        <li class="card message" [class.message--unread]="!item.read" [attr.data-testid]="'notification-' + item.id">
+          <div class="message__top">
+            <span class="kind" [attr.data-kind]="item.kind" data-testid="notification-type">
+              <app-icon [name]="iconOf(item.kind)" [size]="16" />{{ kindLabel(item.kind) }}
+            </span>
+            <time class="muted" [attr.datetime]="item.createdAt" [title]="item.createdAt | date: 'full'">{{ item.createdAt | timeAgo }}</time>
+          </div>
+          @if (item.subject.startsWith('Automated ')) {
+            <div class="auto-banner" role="note" data-testid="automated-banner">
+              <strong>Automated trade triggered</strong>
+              <span>Placed automatically by one of your strategies. You did not place this order.</span>
+            </div>
+          }
+          <h2 class="message__subject">{{ item.subject }}</h2>
+          <p class="message__body">{{ item.body }}</p>
+          <p class="message__delivery muted" [attr.data-status]="item.status" data-testid="notification-delivery">
+            <span class="dot" aria-hidden="true"></span>{{ delivery(item) }}
+          </p>
+          <div class="message__actions">
+            @if (!item.read) {
+              <button type="button" class="secondary" [disabled]="busyId() !== null" (click)="markRead(item)"
+                      data-testid="mark-read">
+                Mark as read
+              </button>
+            } @else {
+              <span class="muted">Read</span>
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</section>

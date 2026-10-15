@@ -1,0 +1,189 @@
+<section class="page" data-testid="admin-dashboard">
+  <header class="head">
+    <div>
+      <h1>Admin</h1>
+      <p class="muted">Every account, read only, and customer registration.</p>
+    </div>
+  </header>
+  <div class="tabs" role="tablist" aria-label="Admin sections"> <button type="button" role="tab"
+      [class.active]="tab() === 'accounts'" [attr.aria-selected]="tab() === 'accounts'" (click)="setTab('accounts')"
+      data-testid="tab-accounts"> Accounts <span class="count">{{ stats().total }}</span> </button> <button
+      type="button" role="tab" [class.active]="tab() === 'register'" [attr.aria-selected]="tab() === 'register'"
+      (click)="setTab('register')" data-testid="tab-register"> Register customer </button> </div> @if (tab() === 'accounts') {
+  <div class="stats">
+    <article class="card stat stat--green">
+      <p class="stat__label">Accounts</p>
+      <p class="stat__value" data-testid="stat-accounts"> {{ stats().total }} </p>
+    </article>
+    <article class="card stat stat--blue">
+      <p class="stat__label">Active</p>
+      <p class="stat__value" data-testid="stat-active"> {{ stats().active }} </p>
+    </article>
+    <article class="card stat stat--amber">
+      <p class="stat__label">Total cash, in USD</p>
+      <p class="stat__value tabular" data-testid="stat-cash"> {{ stats().cashUsd | number: '1.2-2' }} </p>
+    </article>
+  </div> @if (error()) { <div class="banner error" role="alert"> {{ error() }} </div>
+  <div> <button type="button" class="secondary" (click)="loadAccounts()"> Try again </button> </div> } <div
+    class="filters"> <label class="sr-only" for="admin-search">Search</label> <input id="admin-search" type="search"
+      placeholder="Search name, email, account or client reference" [value]="search()"
+      (input)="search.set($any($event.target).value)" autocomplete="off" data-testid="admin-search" /> <select
+      aria-label="Account type" [value]="typeFilter()" (change)="typeFilter.set($any($event.target).value)"
+      data-testid="admin-type">
+      <option value="">All types</option> @for (type of accountTypes; track type) { <option [value]="type"> {{
+        type.replace('_', ' ') }} </option> }
+    </select> <select aria-label="Account status" [value]="statusFilter()"
+      (change)="statusFilter.set($any($event.target).value)" data-testid="admin-status">
+      <option value="">All statuses</option>
+      <option value="ACTIVE">Active</option>
+      <option value="SUSPENDED">Suspended</option>
+      <option value="CLOSED">Closed</option>
+    </select> @if (search() || typeFilter() || statusFilter()) { <button type="button" class="secondary"
+      (click)="clearFilters()"> Clear </button> } </div>
+  <article class="card table-card"> @if (loading()) { <span class="skeleton"></span> <span class="skeleton"></span>
+    <span class="skeleton"></span> } @else { <table>
+      <thead>
+        <tr>
+          <th scope="col">Customer</th>
+          <th scope="col">Account</th>
+          <th scope="col">Type</th>
+          <th scope="col" class="num">Cash</th>
+          <th scope="col">Status</th>
+          <th scope="col">Opened</th>
+        </tr>
+      </thead>
+      <tbody> @for (row of visible(); track row.accountId) { <tr class="clickable"
+          [class.selected]="selected()?.accountId === row.accountId" tabindex="0" (click)="select(row)"
+          (keydown.enter)="select(row)" data-testid="admin-row">
+          <td> <strong>{{ row.clientName }}</strong> <span class="sub">{{ row.email }}</span> </td>
+          <td> <span class="mono">{{ row.accountRef }}</span> <span class="sub">{{ row.clientRef }}</span> </td>
+          <td> <span class="tag"> {{ row.accountType.replace('_', ' ') }} </span> </td>
+          <td class="num tabular"> {{ row.cashBalance | number: '1.2-2' }} <span class="ccy">{{ row.currency }}</span>
+          </td>
+          <td> <span class="pill" [class.pill--off]="row.status !== 'ACTIVE'"> {{ row.status }} </span> </td>
+          <td class="tabular"> {{ row.createdAt | date: 'd MMM y' }} </td>
+        </tr> } @empty { <tr class="none">
+          <td colspan="6"> <span class="muted">No accounts match.</span> </td>
+        </tr> } </tbody>
+    </table> } </article> <!-- Account details modal --> @if (selected(); as chosen) { <div class="detail-overlay"
+    role="dialog" aria-modal="true" aria-labelledby="admin-detail-title"> <!-- Background overlay -->
+    <div class="detail-overlay__backdrop" (click)="select(chosen)"></div> <!-- Modal card -->
+    <article class="card detail detail-overlay__card" data-testid="admin-detail" (click)="$event.stopPropagation()">
+      <div class="detail__head">
+        <div>
+          <h2 id="admin-detail-title"> {{ chosen.clientName }} </h2>
+          <p class="muted"> {{ chosen.accountRef }} &middot; {{ chosen.email }} @if (chosen.phone) { &middot; {{
+            chosen.phone }} } </p>
+        </div> <button type="button" class="secondary" (click)="select(chosen)"> Close </button>
+      </div> @if (detailLoading()) { <span class="skeleton"></span> <span class="skeleton"></span> } @else if
+      (detailError()) { <div class="banner error" role="alert"> {{ detailError() }} </div> } @else { <div
+        class="detail__grid">
+        <div>
+          <h3>Cash balance</h3>
+          <p class="big tabular" data-testid="detail-balance"> {{ balance()?.cashBalance | number: '1.2-2' }} <span
+              class="ccy"> {{ balance()?.currency }} </span> </p>
+          <h3>Holdings</h3> @if (positions().length === 0) { <p class="muted">No holdings.</p> } @else { <table>
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th class="num">Qty</th>
+                <th class="num">Avg cost</th>
+              </tr>
+            </thead>
+            <tbody> @for ( position of positions(); track position.symbol ) { <tr>
+                <td> <strong>{{ position.symbol }}</strong> </td>
+                <td class="num tabular"> {{ position.quantity }} </td>
+                <td class="num tabular"> {{ position.averageCost | number: '1.2-2' }} </td>
+              </tr> } </tbody>
+          </table> }
+        </div>
+        <div>
+          <h3>Recent orders</h3> @if (recentOrders().length === 0) { <p class="muted">No orders.</p> } @else { <table>
+            <thead>
+              <tr>
+                <th>Placed</th>
+                <th>Symbol</th>
+                <th class="num">Qty</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody> @for ( order of recentOrders(); track order.orderId ) { <tr>
+                <td class="tabular"> {{ order.createdOn | date: 'd MMM, HH:mm' }} </td>
+                <td> <strong>{{ order.symbol }}</strong> <span class="sub"> {{ order.side === 'BUY' ? 'Buy' : 'Sell' }}
+                  </span> </td>
+                <td class="num tabular"> {{ order.quantity }} </td>
+                <td> <app-status-badge [status]="order.status" /> </td>
+              </tr> } </tbody>
+          </table> }
+        </div>
+      </div> }
+    </article>
+  </div> } } @if (tab() === 'register') { <div class="register">
+    <form class="card form" [formGroup]="form" (ngSubmit)="register()" novalidate data-testid="register-form"> @if
+      (registerError(); as message) { <div class="banner error" role="alert" data-testid="register-error"> {{ message }}
+      </div> } @if (registered(); as done) { <div class="banner success" role="status" data-testid="register-success">
+        <p> <strong>{{ done.accountRef }}</strong> opened for <strong>{{ done.username }}</strong> (client {{
+          done.clientRef }}). </p>
+        <p> @if (done.emailSent) { The temporary password was emailed to {{ done.email }}. } @else { The login was
+          created, but no email was sent. } </p>
+      </div> } <fieldset>
+        <legend>Client</legend>
+        <div class="row">
+          <div class="field"> <label for="reg-name">Full name</label> <input id="reg-name" type="text"
+              formControlName="name" autocomplete="off" [class.invalid]="fieldError('name')" data-testid="reg-name" />
+            @if (fieldError('name'); as message) { <span class="field-error">{{ message }}</span> } </div>
+          <div class="field"> <label for="reg-email">Email</label> <input id="reg-email" type="email"
+              formControlName="email" autocomplete="off" [class.invalid]="fieldError('email')"
+              data-testid="reg-email" /> @if (fieldError('email'); as message) { <span class="field-error">{{ message
+              }}</span> } @else if (usernamePreview(); as preview) { <span class="field-hint"
+              [class.bad]="!preview.valid" data-testid="reg-username"> @if (preview.valid) { Username will be <strong>{{
+                preview.username }}</strong> } @else { <strong>{{ preview.username || '…' }}</strong> cannot be a
+              username: use 3 to 64 letters, numbers, dots, underscores or hyphens before the @ } </span> } @else {
+            <span class="field-hint"> The part before the @ becomes the username. </span> } </div>
+        </div>
+        <div class="row">
+          <div class="field"> <label for="reg-phone">Phone (optional)</label> <input id="reg-phone" type="text"
+              inputmode="numeric" formControlName="phone" autocomplete="off" [class.invalid]="fieldError('phone')"
+              data-testid="reg-phone" /> @if (fieldError('phone'); as message) { <span class="field-error">{{ message
+              }}</span> } </div>
+          <div class="field"> <label for="reg-dob"> Date of birth (optional) </label> <input id="reg-dob" type="date"
+              formControlName="dateOfBirth" [max]="today" [class.invalid]="fieldError('dateOfBirth')" /> @if
+            (fieldError('dateOfBirth'); as message) { <span class="field-error">{{ message }}</span> } </div>
+        </div>
+        <div class="row">
+          <div class="field"> <label for="reg-gender"> Gender (optional) </label> <select id="reg-gender"
+              formControlName="gender">
+              <option value="">Not given</option> @for (g of genders; track g) { <option [value]="g"> {{ g.charAt(0) +
+                g.slice(1).toLowerCase() }} </option> }
+            </select> </div>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Account</legend>
+        <div class="row">
+          <div class="field"> <label for="reg-type">Account type</label> <select id="reg-type"
+              formControlName="accountType" data-testid="reg-type"> @for (type of accountTypes; track type) { <option
+                [value]="type"> {{ type.replace('_', ' ') }} </option> } </select> </div>
+          <div class="field"> <label for="reg-currency">Currency</label> <select id="reg-currency"
+              formControlName="currency" (change)="chooseCurrency()" data-testid="reg-currency"> @for ( option of
+              currencies; track option.code ) { <option [value]="option.code"> {{ option.code }} · {{ option.name }}
+              </option> } </select> </div>
+        </div>
+        <div class="row">
+          <div class="field"> <label for="reg-balance"> Opening cash (optional) </label> <input id="reg-balance"
+              type="text" inputmode="decimal" formControlName="openingBalance" placeholder="0.00" autocomplete="off"
+              [class.invalid]="fieldError('openingBalance')" data-testid="reg-balance" /> @if
+            (fieldError('openingBalance'); as message) { <span class="field-error">{{ message }}</span> } </div>
+          <div class="field"> <label for="reg-risk"> Risk profile (optional) </label> <select id="reg-risk"
+              formControlName="riskProfile">
+              <option value="">Not recorded</option> @for (r of riskProfiles; track r) { <option [value]="r"> {{
+                r.charAt(0) + r.slice(1).toLowerCase() }} </option> }
+            </select> </div>
+        </div>
+      </fieldset>
+      <div class="actions"> <button type="submit" class="primary" [disabled]="submitting()"
+          data-testid="register-submit"> @if (submitting()) { Registering... } @else { Register customer } </button>
+      </div>
+    </form>
+  </div> }
+</section>

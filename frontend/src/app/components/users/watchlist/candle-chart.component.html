@@ -1,0 +1,37 @@
+<section class="chart" data-testid="candle-chart" [attr.aria-label]="symbol() + ' price chart'">
+  <div class="chart__bar">
+    <div class="tabs" role="radiogroup" aria-label="Time range">
+      @for (option of presets; track option.value) {
+        <button type="button" role="radio" [class.active]="preset() === option.value" [attr.aria-checked]="preset() === option.value"
+                (click)="choose(option.value)" [attr.data-testid]="'preset-' + option.value">{{ option.label }}</button>
+      }
+    </div>
+    @if (shown(); as l) {
+      <p class="legend" data-testid="candle-legend" [class.legend--pinned]="pinned() !== null" aria-live="off">
+        <span class="muted">{{ l.time }}</span>
+        <span>O <b>{{ l.open | number: '1.2-2' }}</b></span>
+        <span>H <b>{{ l.high | number: '1.2-2' }}</b></span>
+        <span>L <b>{{ l.low | number: '1.2-2' }}</b></span>
+        <span>C <b [attr.data-dir]="l.up ? 'gain' : 'loss'">{{ l.close | number: '1.2-2' }}</b></span>
+        @if (l.volume !== null) { <span>V <b>{{ l.volume | number: '1.0-0' }}</b></span> }
+      </p>
+    } @else {
+      <p class="legend muted">Hover a candle, or click one to pin its figures.</p>
+    }
+  </div>
+
+  <div class="chart__stage">
+    <div #host class="chart__canvas" [class.chart__canvas--hidden]="loading() || error() || candles().length === 0"></div>
+
+    @if (loading()) {
+      <div class="chart__note" aria-busy="true" data-testid="candle-loading"><span class="skeleton"></span></div>
+    } @else if (error()) {
+      <div class="chart__note" role="alert" data-testid="candle-error">
+        <p>{{ error() }}</p>
+        <button type="button" class="secondary" (click)="retry()">Try again</button>
+      </div>
+    } @else if (candles().length === 0) {
+      <div class="chart__note muted" data-testid="candle-empty">No chart data for this range yet.</div>
+    }
+  </div>
+</section>

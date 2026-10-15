@@ -1,0 +1,164 @@
+:host {
+  display: block;
+}
+
+.activity {
+  display: grid;
+  gap: 10px;
+}
+
+.readout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  min-height: 20px;
+  margin: 0;
+}
+
+.pip {
+  padding: 1px 8px;
+  border-radius: 99px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.pip--filled {
+  background-color: var(--ok-bg);
+  color: var(--ok);
+}
+
+.pip--working {
+  background-color: var(--new-bg);
+  color: var(--new);
+}
+
+.pip--rejected {
+  background-color: var(--reject-bg);
+  color: var(--reject);
+}
+
+.pip--cancelled {
+  background-color: var(--cancel-bg);
+  color: var(--cancel);
+}
+
+.plot {
+  position: relative;
+}
+
+svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.grid--dash {
+  stroke-dasharray: 3 5;
+  opacity: 0.7;
+}
+
+.axis {
+  fill: var(--muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hit {
+  fill: transparent;
+  transition: fill 160ms ease;
+}
+
+.col.on .hit,
+.col:focus-within .hit {
+  fill: var(--bg);
+}
+
+.cover {
+  fill: transparent;
+  outline: none;
+  cursor: default;
+}
+
+.seg {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: rise 700ms var(--ease) both;
+  transition: opacity 160ms ease;
+}
+
+.seg--filled {
+  fill: var(--ok);
+}
+
+.seg--working {
+  fill: var(--new);
+}
+
+.seg--rejected {
+  fill: var(--reject);
+}
+
+.seg--cancelled {
+  fill: var(--cancel);
+}
+
+.none {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: var(--muted);
+}
+
+.key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.key li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 3px;
+}
+
+.dot--filled {
+  background-color: var(--ok);
+}
+
+.dot--working {
+  background-color: var(--new);
+}
+
+.dot--rejected {
+  background-color: var(--reject);
+}
+
+.dot--cancelled {
+  background-color: var(--cancel);
+}
+
+@keyframes rise {
+  from {
+    transform: scaleY(0);
+  }
+}

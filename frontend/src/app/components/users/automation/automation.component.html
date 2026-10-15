@@ -1,0 +1,202 @@
+<section class="page" data-testid="automation-page">
+  <header class="head">
+    <div>
+      <h1>Automated trading</h1>
+      <p class="muted">Set a rule, switch it on, and it places orders for you when its condition is met.</p>
+    </div>
+    <div class="head__actions">
+      <button type="button" class="icon-btn" (click)="load()" [disabled]="loading()" aria-label="Refresh status" data-tip="Refresh" data-tip-end data-testid="automation-refresh">
+        <app-icon name="refresh" />
+      </button>
+      <button type="button" class="primary" (click)="openCreate()" data-testid="strategy-new"><app-icon name="plus" [size]="18" /> New strategy</button>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <article class="card" aria-busy="true" aria-label="Loading automation">
+      <span class="skeleton short"></span><span class="skeleton"></span>
+    </article>
+  } @else if (error()) {
+    <div class="banner error" role="alert" data-testid="automation-error">{{ error() }}</div>
+    <div><button type="button" class="secondary" (click)="load()">Try again</button></div>
+  } @else {
+    <div class="banner" [class.success]="status()?.running" [class.warn]="!status()?.running" role="status" data-testid="automation-state">
+      <app-mascot [action]="status()?.running ? 'dance' : 'think'" [size]="48" [interactive]="false" />
+      <span>
+        @if (status()?.running) {
+          Automation is <strong>available</strong>. A strategy places real orders only while it is switched <strong>on</strong>.
+        } @else {
+          Automation is <strong>switched off on this platform</strong>. No strategy can be turned on right now.
+        }
+      </span>
+    </div>
+
+    <article class="card">
+      <h2>Strategies</h2>
+      @if (strategies().length === 0) {
+        <app-empty-state title="No strategies yet" message="Create one, then switch it on when you are ready." [size]="90">
+          <button type="button" class="primary" (click)="openCreate()"><app-icon name="plus" [size]="18" /> New strategy</button>
+        </app-empty-state>
+      } @else {
+        <ul class="rows" data-testid="automation-strategies">
+          @for (strategy of strategies(); track strategy.id) {
+            <li class="row" [attr.data-testid]="'strategy-' + strategy.id">
+              <div class="row__main">
+                <strong>#{{ strategy.id }} {{ strategy.symbol }}</strong>
+                <span class="muted"><span class="type-badge" [attr.data-type]="strategy.type" data-testid="strategy-type">{{ shortType(strategy.type) }}</span> {{ strategy.parameters }}</span>
+                <span class="muted">{{ rule(strategy) }}</span>
+                @if (strategy.enabled && strategy.required) {
+                  @if ((strategy.collected ?? 0) < strategy.required) {
+                    <span class="progress" data-testid="strategy-progress">Collecting prices: {{ strategy.collected ?? 0 }} of {{ strategy.required }}. It cannot act until it has them all.</span>
+                    <span class="meter" role="img" [attr.aria-label]="progressPercent(strategy) + '% collected'"><span class="meter__fill" [style.width.%]="progressPercent(strategy)"></span></span>
+                  } @else {
+                    <span class="progress progress--ready" data-testid="strategy-progress">Watching the price: it trades by itself when the condition is met.</span>
+                  }
+                }
+                @for (problem of strategy.problems; track problem) {
+                  <span class="problem">{{ problem }}</span>
+                }
+              </div>
+              <div class="row__side">
+                <button type="button" class="switch" role="switch" [attr.aria-checked]="strategy.enabled"
+                        [attr.aria-label]="(strategy.enabled ? 'Switch off ' : 'Switch on ') + 'strategy ' + strategy.id + ' on ' + strategy.symbol"
+                        [disabled]="busy() || strategy.problems.length > 0" (click)="toggle(strategy)" data-testid="strategy-toggle"></button>
+                <span class="state" [attr.data-state]="stateOf(strategy)" data-testid="strategy-state">{{ stateOf(strategy) }}</span>
+                <button type="button" class="icon-btn danger" (click)="askRemove(strategy)" [disabled]="busy()" aria-label="Remove strategy" data-tip="Remove" data-tip-end data-testid="strategy-remove">
+                  <app-icon name="trash" />
+                </button>
+              </div>
+            </li>
+            <li class="extras" [attr.data-testid]="'strategy-extras-' + strategy.id">
+              @if (strategy.enabled && charts()[strategy.id]) {
+                <app-echart [option]="charts()[strategy.id]" [height]="180" [label]="strategy.symbol + ' prices with the strategy lines'" data-testid="strategy-chart" />
+              }
+              @if (strategy.enabled && simulationEnabled()) {
+                <div class="demo" data-testid="strategy-demo">
+                  <span class="muted">Demo: make this strategy trigger now (places a real order)</span>
+                  <button type="button" class="secondary small" [disabled]="busy()" (click)="askDemo(strategy, 'BUY')" data-testid="demo-buy">Trigger BUY</button>
+                  <button type="button" class="secondary small" [disabled]="busy()" (click)="askDemo(strategy, 'SELL')" data-testid="demo-sell">Trigger SELL</button>
+                </div>
+              }
+              <div class="trades" [attr.data-testid]="'strategy-history-' + strategy.id">
+                <h3>Automated trades</h3>
+                @if (tradesOf(strategy.id).length === 0) {
+                  <p class="muted" data-testid="strategy-no-trades">None yet. It trades by itself when its condition is met, and each trade shows here.</p>
+                } @else {
+                  <ul class="trade-list">
+                    @for (trade of tradesOf(strategy.id); track $index) {
+                      <li class="trade" data-testid="history-row">
+                        <span class="trade__when">{{ trade.at | date: 'd MMM, HH:mm:ss' }}</span>
+                        <span class="side" [attr.data-side]="trade.trigger">{{ trade.trigger }}</span>
+                        <span class="trade__what">{{ trade.quantity ?? '' }} {{ trade.symbol }}@if (trade.limitPrice !== null) { at {{ trade.limitPrice | number: '1.2-2' }} }</span>
+                        <span class="outcome" [attr.data-outcome]="trade.outcome" [attr.title]="outcome(trade.outcome).hint" data-testid="result-outcome">{{ outcome(trade.outcome).label }}</span>
+                        @if (trade.detail && trade.outcome !== 'ORDER_SUBMITTED') { <span class="muted detail">{{ trade.detail }}</span> }
+                      </li>
+                    }
+                  </ul>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </article>
+
+    <p class="muted fine">A trigger is not a trade: only "Order sent" means the trading service accepted an order, and the executor still decides whether it fills. Orders are subject to the same checks as one you place yourself.</p>
+  }
+
+  @if (creating()) {
+    <app-modal title="New strategy" mascot="wave" size="wide" (closed)="closeCreate()">
+      <form class="form" (submit)="$event.preventDefault(); create()" data-testid="strategy-form">
+        <p class="muted">It starts switched off. Nothing is traded until you switch it on.</p>
+        @if (formError()) {
+          <div class="banner error" role="alert" data-testid="strategy-form-error">{{ formError() }}</div>
+        }
+        <div class="field">
+          <label for="strategy-type">Rule</label>
+          <app-select inputId="strategy-type" [options]="typeOptions" [value]="type()" (valueChange)="type.set($any($event))" testId="strategy-type" ariaLabel="Rule" />
+        </div>
+        <div class="field">
+          <label for="strategy-symbol">Instrument</label>
+          <app-select inputId="strategy-symbol" [options]="symbolOptions()" [value]="symbol()" (valueChange)="symbol.set($event)" placeholder="Select instrument"
+                      searchPlaceholder="Search by symbol or name" testId="strategy-symbol" ariaLabel="Instrument" />
+        </div>
+        <div class="field">
+          <label for="strategy-quantity">Quantity per order</label>
+          <input id="strategy-quantity" type="text" inputmode="numeric" [value]="quantity()" (input)="set('quantity', $any($event.target).value)" data-testid="strategy-quantity" />
+        </div>
+        @if (type() === 'MA_CROSSOVER') {
+          <div class="pair">
+            <div class="field">
+              <label for="strategy-short">Short average (prices)</label>
+              <input id="strategy-short" type="text" inputmode="numeric" [value]="shortPeriod()" (input)="set('shortPeriod', $any($event.target).value)" data-testid="strategy-short" />
+            </div>
+            <div class="field">
+              <label for="strategy-long">Long average (prices)</label>
+              <input id="strategy-long" type="text" inputmode="numeric" [value]="longPeriod()" (input)="set('longPeriod', $any($event.target).value)" data-testid="strategy-long" />
+            </div>
+          </div>
+        } @else {
+          <div class="pair">
+            <div class="field">
+              <label for="strategy-period">Average over (prices)</label>
+              <input id="strategy-period" type="text" inputmode="numeric" [value]="period()" (input)="set('period', $any($event.target).value)" data-testid="strategy-period" />
+            </div>
+            <div class="field">
+              <label for="strategy-multiplier">Band width (std. deviations)</label>
+              <input id="strategy-multiplier" type="text" inputmode="decimal" [value]="multiplier()" (input)="set('multiplier', $any($event.target).value)" data-testid="strategy-multiplier" />
+            </div>
+          </div>
+        }
+        <div class="modal__actions">
+          <button type="button" class="secondary" (click)="closeCreate()">Cancel</button>
+          <button type="submit" class="primary" [disabled]="busy()" data-testid="strategy-create">Create</button>
+        </div>
+      </form>
+    </app-modal>
+  }
+
+  @if (confirmingOn(); as strategy) {
+    <app-modal title="Switch on this strategy?" mascot="think" size="wide" (closed)="confirmingOn.set(null)">
+      <div class="confirm" data-testid="confirm-on">
+        <p><strong>{{ strategy.symbol }}</strong>: {{ rule(strategy) }}.</p>
+        <p class="warn-text">This places <strong>real orders</strong> on account {{ accountRef() ?? "your account" }}, using your cash and holdings, without asking you each time. You can switch it off at any time, but an order already sent cannot be taken back by switching off.</p>
+        <label class="ack">
+          <input type="checkbox" [checked]="acknowledged()" (change)="acknowledged.set($any($event.target).checked)" data-testid="confirm-ack" />
+          <span>I understand and want this strategy to trade.</span>
+        </label>
+        <div class="modal__actions">
+          <button type="button" class="secondary" (click)="confirmingOn.set(null)" data-testid="confirm-cancel">Not now</button>
+          <button type="button" class="primary" [disabled]="!acknowledged() || busy()" (click)="confirmOn()" data-testid="confirm-switch-on">Switch on</button>
+        </div>
+      </div>
+    </app-modal>
+  }
+
+  @if (demoing(); as demo) {
+    <app-modal title="Run the demo?" mascot="think" size="wide" (closed)="demoing.set(null)">
+      <div class="confirm" data-testid="confirm-demo">
+        <p>This walks a scripted price path for <strong>{{ demo.strategy.symbol }}</strong> so that its rule triggers a <strong>{{ demo.direction }}</strong> now.</p>
+        <p class="warn-text">The order it places is <strong>real</strong>: {{ demo.direction }} {{ demo.strategy.quantity }} {{ demo.strategy.symbol }} on account {{ accountRef() ?? "your account" }}, sent through the same trading service as any other order.</p>
+        <label class="ack">
+          <input type="checkbox" [checked]="demoAcknowledged()" (change)="demoAcknowledged.set($any($event.target).checked)" data-testid="demo-ack" />
+          <span>I understand this places a real order.</span>
+        </label>
+        <div class="modal__actions">
+          <button type="button" class="secondary" (click)="demoing.set(null)" data-testid="demo-cancel">Cancel</button>
+          <button type="button" class="primary" [disabled]="!demoAcknowledged() || busy()" (click)="confirmDemo()" data-testid="demo-confirm">Run demo</button>
+        </div>
+      </div>
+    </app-modal>
+  }
+
+  @if (removing(); as strategy) {
+    <app-modal title="Remove this strategy?" mascot="think" size="wide" (closed)="removing.set(null)">
+      <p class="muted" data-testid="remove-confirm">{{ strategy.symbol }}: {{ typeLabel(strategy.type) }} will be removed and will stop trading.</p>
+      <div class="modal__actions">
+        <button type="button" class="secondary" (click)="removing.set(null)">Keep it</button>
+        <button type="button" class="primary" [disabled]="busy()" (click)="confirmRemove()" data-testid="remove-confirm-button">Remove</button>
+      </div>
+    </app-modal>
+  }
+</section>

@@ -1,0 +1,150 @@
+:host {
+  display: block;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 60px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--line);
+  background-color: color-mix(in srgb, var(--bg) 86%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.topbar__spacer {
+  flex: 1;
+}
+
+.topbar__menu {
+  display: none;
+}
+
+.topbar__mascot {
+  margin-right: 4px;
+}
+
+.avatar {
+  position: relative;
+}
+
+.avatar__button {
+  position: relative;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.avatar__circle {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: box-shadow var(--fast) ease-out;
+}
+
+.avatar__button:hover .avatar__circle,
+.avatar__button[aria-expanded='true'] .avatar__circle {
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+.nav-dot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  border: 2px solid var(--bg);
+}
+
+.menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 50;
+  min-width: 200px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  transform-origin: top right;
+  animation: menuIn 0.2s ease-out;
+}
+
+.menu__who {
+  padding: 8px 10px 10px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menu__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text);
+  font-weight: 500;
+  text-align: left;
+}
+
+.menu__item:hover,
+.menu__item:focus-visible {
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+}
+
+@keyframes menuIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9, 0.85);
+  }
+}
+
+@media (max-width: 800px) {
+  .topbar__menu {
+    display: inline-grid;
+  }
+}
+
+.inbox-link {
+  position: relative;
+}
+
+.inbox-link--active {
+  background: var(--muted-bg);
+}
+
+.inbox-link__count {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  color: #fff;
+  background: var(--signal);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 18px;
+  text-align: center;
+}

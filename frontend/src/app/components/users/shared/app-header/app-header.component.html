@@ -1,0 +1,48 @@
+<header class="topbar">
+  <button type="button" class="icon-btn topbar__menu" (click)="shell.openDrawer()" aria-label="Open menu" data-tip="Menu" data-testid="open-menu">
+    <app-icon name="menu" [size]="22" />
+  </button>
+
+  <span class="topbar__spacer"></span>
+
+  <app-mascot class="topbar__mascot" [size]="36" [interactive]="false" />
+
+  @if (!isAdmin()) {
+    <a class="icon-btn inbox-link" routerLink="/notifications" routerLinkActive="inbox-link--active"
+       [attr.aria-label]="unread() > 0 ? 'Inbox, ' + unread() + ' unread' : 'Inbox'" data-tip="Inbox" data-tip-below data-testid="inbox-link">
+      <app-icon name="inbox" [size]="22" />
+      @if (unread() > 0) {
+        <span class="inbox-link__count" data-testid="unread-badge">{{ unread() > 99 ? '99+' : unread() }}</span>
+      }
+    </a>
+  }
+
+  <a class="icon-btn" [routerLink]="isAdmin() ? '/admin/settings' : '/settings'" aria-label="Settings" data-tip="Settings" data-tip-below data-testid="settings-link">
+    <app-icon name="settings" [size]="22" />
+  </a>
+
+  <div class="avatar">
+    <button type="button" class="avatar__button" (click)="toggleMenu()" [attr.aria-expanded]="menuOpen()"
+            aria-haspopup="menu" [attr.aria-label]="'Account menu for ' + displayName()" [attr.data-tip]="displayName()"
+            data-tip-below data-tip-end data-testid="avatar-button">
+      <span class="avatar__circle" [style.background-color]="avatarColor()">{{ initials() }}</span>
+      @if (mustChangePassword()) {
+        <span class="nav-dot" title="Change your temporary password" aria-label="Action needed"></span>
+      }
+    </button>
+
+    @if (menuOpen()) {
+      <div class="menu" role="menu" data-testid="avatar-menu">
+        <p class="menu__who">{{ displayName() }}</p>
+        @if (!isAdmin()) {
+          <button type="button" role="menuitem" class="menu__item" (click)="openProfile()" data-testid="menu-profile">
+            <app-icon name="user" [size]="18" /> Profile
+          </button>
+        }
+        <button type="button" role="menuitem" class="menu__item" (click)="signOut()" data-testid="sign-out">
+          <app-icon name="logout" [size]="18" /> Sign out
+        </button>
+      </div>
+    }
+  </div>
+</header>

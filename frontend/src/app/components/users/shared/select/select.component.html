@@ -1,0 +1,40 @@
+<div class="select" [class.select--open]="open()">
+  <button type="button" #trigger class="select__trigger" role="combobox" [id]="inputId()" [disabled]="isDisabled()"
+          [class.select__trigger--invalid]="invalid()" [attr.aria-expanded]="open()" aria-haspopup="listbox"
+          [attr.aria-controls]="open() ? listId : null" [attr.aria-label]="ariaLabel() || null"
+          (click)="toggle()" (keydown)="onTriggerKey($event)" [attr.data-testid]="testId()">
+    @if (selectedOption(); as option) {
+      <span class="select__value"><strong>{{ option.label }}</strong>@if (option.hint) {<span class="select__hint">{{ option.hint }}</span>}</span>
+    } @else if (selected()) {
+      <span class="select__value"><strong>{{ selected() }}</strong></span>
+    } @else {
+      <span class="select__placeholder">{{ placeholder() }}</span>
+    }
+    <app-icon name="chevronDown" [size]="16" class="select__chevron" />
+  </button>
+
+  @if (open()) {
+    <div class="select__panel" data-testid="select-panel" [style.left.px]="place().left" [style.width.px]="place().width" [style.top.px]="place().top" [style.bottom.px]="place().bottom">
+      <input #search type="text" class="select__search" role="searchbox" [placeholder]="searchPlaceholder()" autocomplete="off"
+             [value]="query()" (input)="onSearch($any($event.target).value)" (keydown)="onSearchKey($event)"
+             [attr.aria-controls]="listId" aria-label="Search" data-testid="select-search" />
+      <ul class="select__list" role="listbox" [id]="listId" [style.max-height.px]="place().list">
+        @for (option of shown(); track option.value; let i = $index) {
+          <li role="option" class="select__item" [class.select__item--active]="i === active()" [attr.aria-selected]="option.value === selected()"
+              [attr.data-active]="i === active()" (mousedown)="$event.preventDefault(); choose(option)" (mousemove)="active.set(i)"
+              [attr.data-testid]="'option-' + option.value">
+            <span class="select__label"><strong>{{ option.label }}</strong>@if (option.hint) {<span class="select__hint">{{ option.hint }}</span>}</span>
+            @if (option.tag) {
+              <span class="select__tag">{{ option.tag }}</span>
+            }
+            @if (option.value === selected()) {
+              <app-icon name="check" [size]="16" class="select__check" />
+            }
+          </li>
+        } @empty {
+          <li class="select__empty" role="presentation">{{ emptyText() }}</li>
+        }
+      </ul>
+    </div>
+  }
+</div>

@@ -1,0 +1,32 @@
+<div class="scrim" (click)="closed.emit()"></div>
+<aside class="panel" role="dialog" aria-label="Trigger history" data-testid="trigger-panel">
+  <header class="panel__head">
+    <h3>{{ heading() }}</h3>
+    <button type="button" class="icon-btn" (click)="closed.emit()" aria-label="Close" data-tip="Close" data-testid="trigger-close">
+      <app-icon name="close" />
+    </button>
+  </header>
+
+  @if (loading()) {
+    <div aria-busy="true"><span class="skeleton"></span><span class="skeleton short"></span></div>
+  } @else if (error()) {
+    <div class="banner error" role="alert">{{ error() }}</div>
+  } @else if (triggers().length === 0) {
+    <app-empty-state title="Not triggered yet" message="This alert has not fired. When the price meets your condition, it will show up here." [size]="110" />
+  } @else {
+    <ul class="triggers stagger" data-testid="trigger-list">
+      @for (trigger of triggers(); track trigger.id) {
+        <li class="trigger" data-testid="trigger-card">
+          <span class="dot" [class]="'dot ' + statusOf(trigger).tone" aria-hidden="true"></span>
+          <div class="trigger__main">
+            <strong class="price">{{ trigger.triggerPrice | number: '1.2-2' }} @if (currency()) { <span class="pill-ccy" [attr.data-ccy]="currency()">{{ currency() }}</span> }</strong>
+            <span class="muted" [title]="trigger.triggeredAt | date: 'full'">{{ trigger.triggeredAt | timeAgo }}</span>
+          </div>
+          <span class="trigger__status">{{ statusOf(trigger).label }}</span>
+        </li>
+      }
+    </ul>
+  }
+
+  <button type="button" class="secondary back" (click)="closed.emit()">Back</button>
+</aside>

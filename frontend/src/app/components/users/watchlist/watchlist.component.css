@@ -1,0 +1,227 @@
+:host {
+  display: block;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.head h1 {
+  margin-bottom: 4px;
+}
+
+.adder {
+  display: flex;
+  gap: 8px;
+  width: min(460px, 100%);
+}
+
+.adder__select {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The detail card: it opens above the list and drops in one stepped move. */
+.detail {
+  padding: var(--sp-3);
+  border: 2px solid var(--text);
+  box-shadow: 6px 6px 0 var(--text);
+  animation: detailIn 360ms steps(6, end);
+}
+
+.detail > div {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.detail__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.detail__mascot {
+  margin: -6px 0 -8px -6px;
+}
+
+.detail__id {
+  min-width: 0;
+}
+
+.detail__price {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  margin-left: auto;
+}
+
+.detail__price .display {
+  font-size: 34px;
+  font-variant-numeric: tabular-nums;
+}
+
+.change {
+  font-weight: 800;
+}
+
+.detail__head .icon-btn {
+  align-self: flex-start;
+}
+
+.detail__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  padding-top: var(--sp-2);
+  border-top: 2px dotted var(--line);
+}
+
+.facts {
+  display: flex;
+  gap: 32px;
+  margin: 0;
+}
+
+.facts dt {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.facts dd {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+a.button.buy {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #fff;
+}
+
+a.button.sell {
+  background: var(--reject);
+  border-color: var(--reject);
+  color: #fff;
+}
+
+a.button.ghosted {
+  color: var(--text);
+  background: var(--bg);
+  border-color: var(--line);
+}
+
+a.button.ghosted:hover {
+  background: var(--muted-bg);
+}
+
+/* The list: plain rows, one line each. */
+.list {
+  padding: 6px;
+}
+
+.rows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1.4fr) minmax(0, 1.6fr) 90px 36px;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-bottom: 1px dashed var(--line);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: background-color var(--fast) ease-out;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.row:hover,
+.row--open {
+  background: var(--muted-bg);
+}
+
+.row--open {
+  box-shadow: inset 3px 0 0 var(--signal);
+}
+
+.row__badge {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--on-accent);
+  background: var(--accent);
+}
+
+.row__id,
+.row__price {
+  display: grid;
+  min-width: 0;
+}
+
+.row__id .muted,
+.row__price .muted {
+  overflow: hidden;
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.row__price {
+  text-align: right;
+}
+
+.row__change {
+  text-align: right;
+  font-weight: 800;
+}
+
+.row .icon-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+@keyframes detailIn {
+  from {
+    opacity: 0;
+    transform: translateY(-18px);
+  }
+}
+
+@media (max-width: 700px) {
+  .row {
+    grid-template-columns: 36px minmax(0, 1fr) auto 32px;
+  }
+
+  .row__price {
+    display: none;
+  }
+
+  .detail__price {
+    margin-left: 0;
+  }
+}

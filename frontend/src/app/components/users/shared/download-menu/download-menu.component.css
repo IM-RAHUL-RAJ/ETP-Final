@@ -1,0 +1,101 @@
+:host {
+  display: inline-block;
+}
+
+.dl {
+  position: relative;
+}
+
+.dl__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.glyph {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dl__panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 20;
+  display: grid;
+  gap: 4px;
+  min-width: 230px;
+  padding: 8px;
+  border: 1px solid var(--border, rgba(128, 128, 128, 0.3));
+  border-radius: 12px;
+  background: var(--surface, Canvas);
+  color: var(--text, CanvasText);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  transform-origin: top right;
+  animation: dl-in 0.18s ease-out;
+}
+
+.dl__scope {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 4px;
+  padding: 4px 6px 8px;
+  border: 0;
+  border-bottom: 1px solid var(--border, rgba(128, 128, 128, 0.25));
+  font-size: 13px;
+}
+
+.dl__scope legend {
+  padding: 0;
+  margin-bottom: 4px;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.dl__charts {
+  padding: 4px 6px 8px;
+  font-size: 13px;
+}
+
+.dl__item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s ease-out;
+}
+
+.dl__item:hover,
+.dl__item:focus-visible {
+  background: rgba(128, 128, 128, 0.14);
+}
+
+.dl__item span {
+  font-size: 12px;
+  opacity: 0.65;
+}
+
+@keyframes dl-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dl__panel {
+    animation: none;
+  }
+}

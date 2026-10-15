@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="quorum-grad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0d8a66"/>
+      <stop offset="0.55" stop-color="#0f8f94"/>
+      <stop offset="1" stop-color="#2f62d6"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="64" height="64" rx="18" fill="url(#quorum-grad)"/>
+
+  <circle cx="31" cy="30" r="14"
+          fill="none"
+          stroke="#fff"
+          stroke-width="5.5"/>
+
+  <path d="M38 38l10 10"
+        stroke="#fff"
+        stroke-width="5.5"
+        stroke-linecap="round"/>
+
+  <circle cx="31" cy="30" r="4.2" fill="#fff"/>
+</svg>

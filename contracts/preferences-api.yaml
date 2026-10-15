@@ -1,0 +1,199 @@
+openapi: 3.1.0
+
+info:
+  title: Customer preferences
+  version: 1.0.0
+  summary: A customer's default account and alert channel.
+  description: |
+    Sprint 10 extension, built as the `com.capstone.etp.preferences` package inside the Trade REST API.
+    There is no separate deployable: these routes are served on the same port as the order and account
+    routes, behind the same bearer-token verification.
+
+    ## What it holds
+
+    A customer's **default account** (the account the application opens on at sign-in) and **alert
+    channel** (`EMAIL`, `SMS` or `PUSH`). Preferences belong to the **customer**, not to one account: a
+    customer with two accounts has one preference.
+
+    ## What it does not hold
+
+    **No e-mail address and no telephone number.** Both already live on the customer's profile
+    (`clients`). The channel is a choice; where a message is sent on that channel is read from the
+    profile at the moment it is needed. There is one copy of each contact detail on the platform, a
+    changed address takes effect on the next message, and a leak of this table discloses no contact
+    detail. The API returns the contact detail **masked** (`j***@example.com`, `******3210`).
+
+    There is deliberately **no field for a URL, host or address**. A request that carries a field this
+    contract does not define is refused with `422 VAL-422`, and so is a channel outside the three
+    values. A destination the platform will contact is therefore never supplied by a caller.
+
+    ## Access control
+
+    Every route compares the verified token's `accountId` claim with `{accountId}` in the path. A
+    mismatch is `403 ACC-403` (and is logged), never `404` and never an empty answer. An ADMIN token has
+    no exception: it must hold the account in its claim like anyone else.
+
+    ## The internal path is not a route
+
+    Notifications resolves a channel through the in-process Java interface
+    `com.capstone.etp.preferences.ChannelResolver`. It is **not** exposed over HTTP, so no customer
+    token can reach it. See `docs/sprint-10/seams.md` for what it answers.
+
+    ## When nothing is stored
+
+    The platform default applies and `source` is `DEFAULT`: e-mail to the profile's address, or the
+    in-app/push channel when the profile has no e-mail address. `defaultAccountId` is then the account
+    being viewed.
+
+servers:
+  - url: http://localhost:8081
+    description: Local development (Trade REST API).
+
+tags:
+  - name: Preferences
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/accounts/{accountId}/preferences:
+    parameters:
+      - $ref: '#/components/parameters/AccountIdPath'
+    get:
+      tags: [Preferences]
+      operationId: getPreferences
+      summary: Get the preferences
+      responses:
+        '200':
+          description: The customer's preferences, or the platform defaults when none are stored.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Preferences'
+              example:
+                accountId: 1
+                defaultAccountId: 1
+                alertChannel: SMS
+                contactDetail: '******3210'
+                source: STORED
+                channels:
+                  - { channel: EMAIL, available: true, hint: 'j***@example.com' }
+                  - { channel: SMS, available: true, hint: '******3210' }
+                  - { channel: PUSH, available: true, hint: 'In-app inbox' }
+                updatedAt: '2026-10-06T10:00:00Z'
+        '401': { $ref: '#/components/responses/Unauthorised' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/AccountNotFound' }
+    put:
+      tags: [Preferences]
+      operationId: putPreferences
+      summary: Replace the preferences
+      description: |
+        Stores the default account and the alert channel. The default account must be one the signed-in
+        token may use and one that belongs to the same customer (`403 ACC-403` otherwise). A channel the
+        profile cannot serve (SMS with no phone number on file) is refused now with `422`, not discovered
+        when a message fails to send.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePreferences'
+      responses:
+        '200':
+          description: Stored. Returns the preferences as they now stand.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Preferences'
+        '401': { $ref: '#/components/responses/Unauthorised' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/AccountNotFound' }
+        '422': { $ref: '#/components/responses/InvalidInput' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    AccountIdPath:
+      name: accountId
+      in: path
+      required: true
+      description: The numeric account key. Must be in the token's `accountId` claim.
+      schema: { type: integer, format: int64, minimum: 1 }
+
+  responses:
+    Unauthorised:
+      description: Missing, malformed, expired or wrongly signed token.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { errorCode: AUTH-401, message: Unauthorised }
+    Forbidden:
+      description: The token is valid but does not hold this account.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { errorCode: ACC-403, message: Sorry you dont have access to this account }
+    AccountNotFound:
+      description: No such account.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { errorCode: ACC-404, message: Account not found }
+    InvalidInput:
+      description: |
+        The body failed validation, carried a field this contract does not define, named a channel
+        outside the set, or asked for a channel the profile cannot serve.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { errorCode: VAL-422, message: Invalid input }
+
+  schemas:
+    AlertChannel:
+      type: string
+      enum: [EMAIL, SMS, PUSH]
+    UpdatePreferences:
+      type: object
+      additionalProperties: false
+      required: [defaultAccountId, alertChannel]
+      properties:
+        defaultAccountId: { type: integer, format: int64, minimum: 1 }
+        alertChannel: { $ref: '#/components/schemas/AlertChannel' }
+    Preferences:
+      type: object
+      required: [accountId, defaultAccountId, alertChannel, source, channels]
+      properties:
+        accountId: { type: integer, format: int64 }
+        defaultAccountId: { type: integer, format: int64 }
+        alertChannel: { $ref: '#/components/schemas/AlertChannel' }
+        contactDetail:
+          type: [string, 'null']
+          description: The destination for the chosen channel, masked. Never the full address or number.
+        source:
+          type: string
+          enum: [STORED, DEFAULT]
+        channels:
+          type: array
+          items:
+            type: object
+            required: [channel, available, hint]
+            properties:
+              channel: { $ref: '#/components/schemas/AlertChannel' }
+              available: { type: boolean, description: Whether the profile can serve this channel. }
+              hint: { type: string }
+        updatedAt: { type: [string, 'null'], format: date-time }
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [errorCode, message]
+      properties:
+        errorCode:
+          type: string
+          enum: [ACC-403, ACC-404, AUTH-401, VAL-422]
+        message: { type: string }

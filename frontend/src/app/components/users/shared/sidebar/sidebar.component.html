@@ -1,0 +1,31 @@
+@if (drawerOpen()) {
+  <div class="scrim" (click)="shell.closeDrawer()" data-testid="sidebar-scrim"></div>
+}
+
+<aside class="sidebar" [class.sidebar--collapsed]="collapsed()" [class.sidebar--open]="drawerOpen()" data-testid="sidebar">
+  <a class="sidebar__brand" routerLink="/dashboard" aria-label="Quorum home">
+    <app-brand-logo [size]="28" [compact]="collapsed()" />
+  </a>
+
+  <nav class="sidebar__nav" aria-label="Primary">
+    @for (item of navigationItems(); track item.path) {
+      <a [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: item.path === '/admin' }" #link="routerLinkActive"
+         class="nav-item" [attr.aria-current]="link.isActive ? 'page' : null"
+         [attr.data-tip]="collapsed() ? item.label : null"
+         [attr.aria-label]="item.label" [attr.data-testid]="'nav-' + item.path.slice(1)">
+        <app-icon [name]="item.icon" [size]="22" />
+        <span class="nav-item__label">{{ item.label }}</span>
+        @if (item.unread && unread() > 0) {
+          <span class="nav-count" [attr.aria-label]="unread() + ' unread messages'" data-testid="unread-badge">{{ unread() > 99 ? '99+' : unread() }}</span>
+        }
+      </a>
+    }
+  </nav>
+
+  <button type="button" class="sidebar__toggle" (click)="shell.toggleCollapsed()"
+          [attr.aria-label]="collapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
+          [attr.data-tip]="collapsed() ? 'Expand' : 'Collapse'"
+          [attr.aria-expanded]="!collapsed()" data-testid="sidebar-toggle">
+    <app-icon name="chevronLeft" [size]="20" class="sidebar__chevron" />
+  </button>
+</aside>

@@ -1,0 +1,96 @@
+erDiagram
+    CLIENTS {
+        bigserial id PK
+        varchar client_ref UK
+        text name
+        text email UK
+        text password_hash
+        text phone
+        date date_of_birth
+        gender_enum gender
+        client_status_enum status
+    }
+
+    ACCOUNTS {
+        bigserial id PK
+        varchar account_ref UK
+        bigint client_id FK
+        account_type_enum account_type
+        char currency
+        numeric cash_balance
+        account_status_enum status
+        bigint version
+        timestamptz created_at
+        timestamptz suspended_at
+        timestamptz closed_at
+        timestamptz updated_at
+    }
+
+    ACCOUNT_PREFERENCES {
+        bigserial id PK
+        bigint account_id FK
+        risk_profile_enum risk_profile
+        text investment_goals
+        text_array preferred_sectors
+        timestamptz created_at
+    }
+
+    PORTFOLIOS {
+        bigserial id PK
+        bigint account_id FK, UK
+        text name
+        numeric current_value
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    INSTRUMENTS {
+        bigserial id PK
+        text symbol UK
+        text exchange
+        text name
+        asset_class_enum asset_class
+        char currency
+        boolean is_tradable
+        timestamptz stopped_at
+    }
+
+    PORTFOLIO_HOLDINGS {
+        bigserial id PK
+        bigint portfolio_id FK
+        bigint instrument_id FK
+        integer quantity
+        numeric avg_price
+        timestamptz updated_at
+    }
+
+    ORDERS {
+        bigserial id PK
+        bigint account_id FK
+        bigint instrument_id FK
+        text idempotency_key UK
+        order_type_enum order_type
+        integer quantity
+        numeric limit_price
+        order_status_enum status
+        timestamptz created_at
+        timestamptz terminal_at
+    }
+
+    TRANSACTIONS {
+        bigserial id PK
+        bigint order_id FK, UK
+        integer quantity
+        numeric executed_price
+        transaction_status_enum status
+        timestamptz executed_at
+    }
+
+    CLIENTS ||--|{ ACCOUNTS : "owns"
+    ACCOUNTS ||--o{ ACCOUNT_PREFERENCES : "has"
+    ACCOUNTS ||--|| PORTFOLIOS : "has"
+    PORTFOLIOS ||--|{ PORTFOLIO_HOLDINGS : "contains"
+    INSTRUMENTS ||--o{ PORTFOLIO_HOLDINGS : "held as"
+    ACCOUNTS ||--o{ ORDERS : "places"
+    INSTRUMENTS ||--o{ ORDERS : "traded as"
+    ORDERS ||--|| TRANSACTIONS : "settled as"

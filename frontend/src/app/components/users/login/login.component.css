@@ -1,0 +1,106 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.login {
+  position: relative;
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+}
+
+.login__theme {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+.login__main {
+  display: grid;
+  justify-items: center;
+  gap: 24px;
+  width: min(420px, 100%);
+}
+
+.login-card {
+  position: relative;
+  width: 100%;
+  padding: 28px 28px 32px;
+}
+
+.login-card__mascot {
+  display: grid;
+  place-items: center;
+  margin: -8px 0 8px;
+}
+
+.login-header {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.login-header h1 {
+  margin: 0 0 4px;
+  font-size: 30px;
+  font-weight: 900;
+}
+
+.login-header p {
+  margin: 0;
+}
+
+.login-form {
+  display: grid;
+  gap: 16px;
+}
+
+.form-group {
+  display: grid;
+  gap: 6px;
+}
+
+.form-group label {
+  font-weight: 800;
+}
+
+.input-wrap {
+  position: relative;
+}
+
+.input-wrap .form-input {
+  padding-right: 64px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  padding: 2px 8px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 800;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.password-toggle:hover {
+  color: var(--text);
+}
+
+.form-input--error {
+  border-color: var(--reject);
+}
+
+.field-error {
+  color: var(--reject);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.submit-button {
+  width: 100%;
+  margin-top: 4px;
+}

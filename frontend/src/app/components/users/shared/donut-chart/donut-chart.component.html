@@ -1,0 +1,50 @@
+<div class="donut" data-testid="donut">
+  <div class="donut__ring">
+    <svg viewBox="0 0 120 120" role="img" [attr.aria-label]="'Allocation by cost: ' + summary()">
+      <circle class="track" cx="60" cy="60" [attr.r]="radius" />
+      <g transform="rotate(-90 60 60)">
+        @for (arc of arcs(); track arc.label; let i = $index) {
+          <circle
+            class="arc"
+            cx="60"
+            cy="60"
+            [attr.r]="radius"
+            [class.active]="active() === i"
+            [class.dim]="active() !== null && active() !== i"
+            [style.stroke]="arc.color"
+            [style.stroke-dasharray]="arc.dash + ' ' + (circumference - arc.dash)"
+            [style.stroke-dashoffset]="-arc.offset"
+            [style.animation-delay.ms]="i * 110"
+            tabindex="0"
+            (mouseenter)="focus(i)"
+            (mouseleave)="focus(null)"
+            (focus)="focus(i)"
+            (blur)="focus(null)"
+          />
+        }
+      </g>
+    </svg>
+    <div class="donut__centre" aria-live="polite">
+      @if (focused(); as arc) {
+        <span class="donut__label">{{ arc.label }}</span>
+        <strong class="donut__value">{{ arc.share | number: '1.0-1' }}%</strong>
+        <span class="donut__sub">{{ arc.cost | number: '1.2-2' }}</span>
+      } @else {
+        <span class="donut__label">{{ centreLabel() }}</span>
+        <strong class="donut__value">{{ total() | number: '1.0-0' }}</strong>
+        <span class="donut__sub">{{ unit() }}</span>
+      }
+    </div>
+  </div>
+
+  <ul class="legend">
+    @for (arc of arcs(); track arc.label; let i = $index) {
+      <li [class.on]="active() === i" (mouseenter)="focus(i)" (mouseleave)="focus(null)"
+          [style.animation-delay.ms]="i * 70">
+        <span class="swatch" [style.background-color]="arc.color"></span>
+        <span class="legend__name">{{ arc.label }}</span>
+        <span class="legend__share tabular">{{ arc.share | number: '1.0-0' }}%</span>
+      </li>
+    }
+  </ul>
+</div>

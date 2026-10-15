@@ -1,0 +1,358 @@
+<section class="page" data-testid="order-ticket">
+  <header class="head">
+    <div>
+      <h1>New order</h1>
+      <!--<p class="muted">Review it, confirm it, and the trading service takes it from there.</p>-->
+    </div>
+    <div class="head__account" data-testid="order-account-chip">
+      <span class="muted">Account</span>
+      <strong>{{ accountReference() }}</strong>
+    </div>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="banner error" role="alert" data-testid="order-error">{{ errorMessage() }}</div>
+  }
+
+  @if (success(); as placed) {
+    <div class="banner success placed" role="status" data-testid="order-success">
+      <app-mascot class="tick" action="cheer" [size]="72" [interactive]="false" />
+      <div>
+        <p><strong>Order placed.</strong> {{ placed.side === 'BUY' ? 'Buy' : 'Sell' }}
+          {{ placed.quantity }} {{ placed.symbol }} at {{ placed.price | number: '1.2-2' }}</p>
+        <p class="placed__status">
+          Status <span data-testid="order-status"><app-status-badge [status]="placed.status" /></span>
+        </p>
+        @if (placed.status === 'NEW') {
+         <p>
+          This order is being processed. The status will update once execution is complete.
+          <a routerLink="/blotter">View it in the blotter</a>.
+        </p>
+      }
+      </div>
+    </div>
+  }
+
+  <div class="layout">
+    <form class="card ticket" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+      <div class="field">
+        <label for="account">Account reference</label>
+        <input
+          id="account"
+          type="text"
+          [value]="accountReference()"
+          readonly
+          aria-readonly="true"
+          data-testid="order-account"
+        />
+        <span class="field-hint">Read only.</span>
+      </div>
+
+      <div class="sidebar-pick" [class.sell]="form.controls.side.value === 'SELL'">
+        <span class="label" id="side-label">I want to</span>
+        <div class="segmented" [class.sell]="form.controls.side.value === 'SELL'" role="radiogroup"
+             aria-labelledby="side-label"
+             (keydown.arrowleft)="toggleSide()" (keydown.arrowright)="toggleSide()"
+             data-testid="order-side">
+          <span class="thumb" aria-hidden="true"></span>
+          <button type="button" role="radio" [attr.aria-checked]="form.controls.side.value === 'BUY'"
+                  [class.selected]="form.controls.side.value === 'BUY'"
+                  [attr.tabindex]="form.controls.side.value === 'BUY' ? 0 : -1"
+                  (click)="selectSide('BUY')" data-testid="side-buy">Buy</button>
+          <button type="button" role="radio" [attr.aria-checked]="form.controls.side.value === 'SELL'"
+                  [class.selected]="form.controls.side.value === 'SELL'"
+                  [attr.tabindex]="form.controls.side.value === 'SELL' ? 0 : -1"
+                  (click)="selectSide('SELL')" data-testid="side-sell">Sell</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="symbol">Symbol</label>
+        <app-select inputId="symbol" formControlName="symbol" [options]="symbolOptions()" [allowCustom]="true"
+                    [invalid]="!!getSymbolError()" placeholder="Search or type, e.g. AAPL" searchPlaceholder="Search instruments"
+                    emptyText="No listed instrument matches." testId="order-symbol" ariaLabel="Symbol" />
+        @if (getSymbolError()) {
+          <span class="field-error" id="symbol-error">{{ getSymbolError() }}</span>
+        } @else if (instrument(); as info) {
+          <span class="instrument" id="symbol-info" data-testid="instrument-info">
+            <strong>{{ info.name }}</strong>
+            <span class="tag">{{ info.exchange }}</span>
+            <span class="tag tag--violet">{{ info.assetClass.replace('_', ' ') }}</span>
+            <span class="tag tag--blue">Trades in {{ info.currency }}</span>
+            @if (!info.tradable) { <span class="tag tag--red">Not tradable</span> }
+          </span>
+        } @else if (unknownSymbol()) {
+          <span class="field-hint" id="symbol-info">This symbol is not in the instrument list. The trading service will check it.</span>
+        } @else {
+          <span class="field-hint" id="symbol-info">Pick from the list, or type a symbol.</span>
+        }
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="quantity">Quantity</label>
+          <input
+            id="quantity"
+            type="text"
+            inputmode="numeric"
+            formControlName="quantity"
+            autocomplete="off"
+            placeholder="Whole shares"
+            [class.invalid]="getQuantityError()"
+            [attr.aria-invalid]="getQuantityError() ? true : null"
+            [attr.aria-describedby]="getQuantityError() ? 'quantity-error' : null"
+            data-testid="order-quantity"
+          />
+          @if (getQuantityError()) {
+            <span class="field-error" id="quantity-error">{{ getQuantityError() }}</span>
+          }
+        </div>
+
+        <div class="field">
+          <label for="price">Limit price</label>
+          <div class="addon">
+            <input
+              id="price"
+              type="text"
+              inputmode="decimal"
+              formControlName="price"
+              autocomplete="off"
+              placeholder="0.00"
+              [class.invalid]="getPriceError()"
+              [attr.aria-invalid]="getPriceError() ? true : null"
+              [attr.aria-describedby]="getPriceError() ? 'price-error' : 'price-hint'"
+              data-testid="order-price"
+            />
+            <span class="addon__tag" data-testid="price-currency">{{ accountCurrency() ?? '···' }}</span>
+          </div>
+          @if (getPriceError()) {
+            <span class="field-error" id="price-error">{{ getPriceError() }}</span>
+          } @else {
+            <span class="field-hint" id="price-hint">
+              In your home currency{{ accountCurrency() ? ' (' + accountCurrency() + ')' : '' }}.
+              @if (instrumentCurrency() && instrumentCurrency() !== accountCurrency()) {
+                @if (priceInInstrumentCurrency() !== null) {
+                  That is {{ priceInInstrumentCurrency() | number: '1.2-2' }} {{ instrumentCurrency() }} for this instrument.
+                } @else {
+                  The platform converts it to {{ instrumentCurrency() }}.
+                }
+              }
+            </span>
+          }
+        </div>
+      </div>
+
+      @if (affordability(); as short) {
+        <div class="banner warn" role="alert" data-testid="affordability-warning">
+          <strong>This buy may be more than your cash.</strong>
+         <br> Estimated cost {{ summary().estimate | number: '1.2-2' }} {{ short.currency }} against
+          {{ short.cash | number: '1.2-2' }} available, short by {{ short.short | number: '1.2-2' }}.
+        </div>
+      }
+
+      @if (holdingsWarning(); as held) {
+        <div class="banner warn" role="alert" data-testid="holdings-warning">
+          <strong>You hold {{ held.held }} of {{ summary().symbol }}.</strong>
+          This sells {{ summary().quantity }}, so the trading service will likely reject it.
+        </div>
+      }
+
+      <div class="total" data-testid="ticket-total">
+        <div>
+          <span class="muted">Estimated {{ summary().side === 'Buy' ? 'cost' : 'proceeds' }}</span>
+          <strong class="tabular">
+            @if (summary().estimate !== null) {
+              {{ summary().estimate | number: '1.2-2' }} <span class="ccy">{{ accountCurrency() }}</span>
+            } @else { — }
+          </strong>
+        </div>
+        @if (estimateInInstrumentCurrency() !== null && instrumentCurrency() !== accountCurrency()) {
+          <strong class="tabular">
+            <span class="total__alt tabular">≈ {{ estimateInInstrumentCurrency() | number: '1.2-2' }} {{ instrumentCurrency() }}</span>
+          </strong>
+        }
+      </div>
+
+      <div class="actions">
+        <button class="primary" [class.sell]="form.controls.side.value === 'SELL'" type="submit"
+                [disabled]="form.invalid || isSubmitting()" data-testid="place-order">
+          @if (isSubmitting()) {
+            <span class="spinner" aria-hidden="true"></span> Placing order...
+          } @else {
+            Review {{ summary().side.toLowerCase() }} order
+          }
+        </button>
+        <button type="button" class="secondary" (click)="onReset()" data-testid="reset-order">Reset</button>
+      </div>
+    </form>
+
+    <div class="side">
+      <aside class="card balance" aria-label="Account balance" data-testid="order-balance">
+        <div class="card__head">
+          <h2>Cash balance</h2>
+          <button type="button" class="secondary small" (click)="getBalance()" [disabled]="balanceLoading()"
+                  data-testid="get-balance">
+            @if (balanceLoading()) { <span class="spinner spinner--dark" aria-hidden="true"></span> Getting... }
+            @else if (balanceRevealed()) { Refresh }
+            @else { Get balance }
+          </button>
+        </div>
+        @if (balanceError(); as message) {
+          <p class="field-error" role="alert">{{ message }}</p>
+        } @else if (balanceRevealed() && balance(); as current) {
+          <p class="balance__amount tabular" data-testid="balance-amount">
+            <span class="ccy">{{ current.currency }}</span> {{ current.cashBalance | number: '1.2-2' }}
+          </p>
+          <p class="muted fine">Available cash as of {{ current.asOf | date: 'd MMM y, HH:mm:ss' }}</p>
+        } @else {
+          <p class="muted fine">Press Get balance to see your available cash.</p>
+        }
+      </aside>
+
+      <aside class="card summary" aria-label="Order summary" data-testid="order-summary">
+        <h2>Order summary</h2>
+        <dl>
+          <div>
+            <dt>Action</dt>
+            <dd><span class="chip" [class.chip--sell]="summary().side === 'Sell'">{{ summary().side }}</span></dd>
+          </div>
+          <div>
+            <dt>Symbol</dt>
+            <dd>{{ summary().symbol || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Quantity</dt>
+            <dd class="tabular">{{ summary().quantity ?? '—' }}</dd>
+          </div>
+          <div>
+            <dt>Limit price</dt>
+            <dd class="tabular">
+              @if (summary().price !== null) {
+                {{ summary().price | number: '1.2-2' }} {{ accountCurrency() }}
+              } @else { — }
+            </dd>
+          </div>
+        </dl>
+        <div class="estimate">
+          <span class="muted">Estimated value</span>
+          <strong class="tabular" data-testid="order-estimate">
+            @if (summary().estimate !== null) {
+              {{ summary().estimate | number: '1.2-2' }}
+            } @else {
+              —
+            }
+          </strong>
+        </div>
+        <p class="muted fine">An estimate from what you typed. Cash and holdings are checked by the trading service.</p>
+      </aside>
+
+      <details class="card converter" [formGroup]="form" data-testid="order-converter">
+        <summary>
+          <span>Currency converter</span>
+        </summary>
+
+        <div class="fx-pair">
+          <div class="field">
+            <label for="fx-from">From</label>
+            <select id="fx-from" formControlName="currency" data-testid="fx-from"
+                    (change)="chooseFrom($any($event.target).value)">
+              @for (option of currencies; track option.code) {
+                <option [value]="option.code">{{ option.code }} · {{ option.name }}</option>
+              }
+            </select>
+          </div>
+          <button type="button" class="swap" (click)="swapCurrencies()" aria-label="Swap currencies"
+                  data-testid="fx-swap">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7h10m-3-3 3 3-3 3M15 13H5m3-3-3 3 3 3" /></svg>
+          </button>
+          <div class="field">
+            <label for="fx-to">To</label>
+            <select id="fx-to" formControlName="convertTo" data-testid="fx-to"
+                    (change)="chooseTo($any($event.target).value)">
+              @for (option of currencies; track option.code) {
+                <option [value]="option.code">{{ option.code }} · {{ option.name }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="fx-amount">Amount in {{ fxFrom() }}</label>
+          <input id="fx-amount" type="text" inputmode="decimal" autocomplete="off"
+                 [value]="fxAmountText()" (input)="onFxAmountInput($any($event.target).value)"
+                 placeholder="0.00" data-testid="fx-amount" />
+          @if (fxAmountIsEstimate()) {
+            <span class="field-hint">Following your order estimate. Type to convert any other amount.</span>
+          } @else {
+            <button type="button" class="link" (click)="useEstimate()">Use the order estimate</button>
+          }
+        </div>
+
+        <div class="fx-result" data-testid="fx-result">
+          <span class="muted">{{ fxTo() }}</span>
+          <strong class="tabular">
+            @if (converted() !== null) { {{ converted() | number: '1.2-2' }} } @else { — }
+          </strong>
+        </div>
+        @if (fxRate() !== null) {
+          <p class="muted fine" data-testid="fx-rate">
+            1 {{ fxFrom() }} = {{ fxRate() | number: '1.4-6' }} {{ fxTo() }}.
+            Same rates the trading service converts with.
+          </p>
+        }
+      </details>
+    </div>
+  </div>
+
+  @if (confirming()) {
+    <div class="overlay" (click)="cancelReview()" (keydown.escape)="cancelReview()" data-testid="review-overlay">
+      <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="review-title"
+           (click)="$event.stopPropagation()">
+        <div class="dialog__bar" [class.sell]="summary().side === 'Sell'"></div>
+        <h2 id="review-title">Confirm your order</h2>
+        <p class="dialog__lead">
+          <span class="chip" [class.chip--sell]="summary().side === 'Sell'">{{ summary().side }}</span>
+          <strong>{{ summary().quantity }} &times; {{ summary().symbol }}</strong>
+          at {{ summary().price | number: '1.2-2' }} {{ accountCurrency() }}
+        </p>
+
+        <dl class="dialog__list">
+          <div><dt>Account</dt><dd>{{ accountReference() }}</dd></div>
+          @if (instrument(); as info) {
+            <div><dt>Instrument</dt><dd>{{ info.name }} · {{ info.exchange }}</dd></div>
+          }
+          <div>
+            <dt>Estimated {{ summary().side === 'Buy' ? 'cost' : 'proceeds' }}</dt>
+            <dd class="tabular">{{ summary().estimate | number: '1.2-2' }} {{ accountCurrency() }}</dd>
+          </div>
+          @if (estimateInInstrumentCurrency() !== null && instrumentCurrency() !== accountCurrency()) {
+            <div>
+              <dt>In the instrument's currency</dt>
+              <dd class="tabular">{{ estimateInInstrumentCurrency() | number: '1.2-2' }} {{ instrumentCurrency() }}</dd>
+            </div>
+          }
+        </dl>
+
+        @if (affordability()) {
+          <div class="banner warn">Estimated cost is above your available cash. The order will probably be rejected.</div>
+        }
+        @if (holdingsWarning()) {
+          <div class="banner warn">You hold fewer shares than this sells. The order will probably be rejected.</div>
+        }
+        @if (unknownSymbol()) {
+          <div class="banner warn">This symbol is not in the instrument list.</div>
+        }
+
+        <p class="muted fine">A limit order fills at your price or better. Once placed, it can be cancelled while it's status is NEW.</p>
+
+        <div class="dialog__actions">
+          <button type="button" class="secondary" (click)="cancelReview()" data-testid="review-edit">Edit order</button>
+          <button type="button" class="primary" [class.sell]="summary().side === 'Sell'" (click)="confirmOrder()"
+                  data-testid="confirm-order">
+            Confirm {{ summary().side.toLowerCase() }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</section>

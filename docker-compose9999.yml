@@ -1,0 +1,344 @@
+# Every value below comes from the .env at the repository root (see .env.example); nothing is hardcoded here.
+# Containers talk to each other by service name on the trading-net network (postgres, auth-service, backend, kafka).
+services:
+  postgres:
+    image: postgres:16-alpine
+    profiles: ["platform"]
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # First start only (empty volume): one database, schemas trade and auth, then the baseline data.
+      - ./databases/postgreSQL/schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
+      - ./databases/postgreSQL/seed-data.sql:/docker-entrypoint-initdb.d/002_seed-data.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - trading-net
+
+  auth-service:
+    profiles: ["platform"]
+    build:
+      context: ./services/auth_service
+      dockerfile: Dockerfile
+      args:
+        AUTH_SERVICE_PORT: ${AUTH_SERVICE_PORT}
+    environment:
+      AUTH_SERVICE_PORT: ${AUTH_SERVICE_PORT}
+      FRONTEND_URL: ${FRONTEND_URL}
+      FRONTEND_PORT: ${FRONTEND_PORT}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ISSUER: ${JWT_ISSUER}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      # Inside the compose network the database is the postgres service on its own port.
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_SCHEMA_AUTH: ${DB_SCHEMA_AUTH}
+      # Welcome emails carrying a new customer's default password. Without SMTP_HOST,
+      # admin registration is refused rather than creating a user nobody can tell the password to.
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_FROM: ${SMTP_FROM}
+      SMTP_SECURE: ${SMTP_SECURE}
+      # A sign-in link for the welcome email: the web app's address.
+      APP_LOGIN_URL: ${FRONTEND_URL}:${FRONTEND_PORT}
+    ports:
+      - "${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:${AUTH_SERVICE_PORT}/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - trading-net
+
+  backend:
+    profiles: ["platform"]
+    build:
+      context: ./services/trade-api
+      dockerfile: Dockerfile
+      args:
+        ORDER_SERVICE_PORT: ${ORDER_SERVICE_PORT}
+    environment:
+      ORDER_SERVICE_URL: ${ORDER_SERVICE_URL}
+      ORDER_SERVICE_PORT: ${ORDER_SERVICE_PORT}
+      FRONTEND_URL: ${FRONTEND_URL}
+      FRONTEND_PORT: ${FRONTEND_PORT}
+      # Inside the compose network the database is the postgres service on its own port.
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_SCHEMA_TRADE: ${DB_SCHEMA_TRADE}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ISSUER: ${JWT_ISSUER}
+      JWT_ALGORITHM: ${JWT_ALGORITHM}
+      # The auth service is reached by its service name on the network, on its own port.
+      AUTH_SERVICE_URL: http://auth-service
+      AUTH_SERVICE_PORT: ${AUTH_SERVICE_PORT}
+      # The broker on the compose network (KAFKA_HOST:KAFKA_PORT, kafka:29092).
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_HOST}:${KAFKA_PORT}
+      MARKET_DATA_TOPIC: ${MARKET_DATA_TOPIC}
+      TRADE_EVENTS_TOPIC: ${TRADE_EVENTS_TOPIC}
+      # Consumer groups of the Sprint 10 modules, one per module and never shared (see
+      # services/trade-api/README.md).
+      KAFKA_WATCHLIST_GROUP: ${KAFKA_WATCHLIST_GROUP}
+      KAFKA_NOTIFICATIONS_GROUP: ${KAFKA_NOTIFICATIONS_GROUP}
+      KAFKA_PORTFOLIO_GROUP: ${KAFKA_PORTFOLIO_GROUP}
+      MARKET_DATA_CONSUMER_ENABLED: ${MARKET_DATA_CONSUMER_ENABLED}
+      NOTIFICATIONS_CONSUMER_ENABLED: ${NOTIFICATIONS_CONSUMER_ENABLED}
+      PORTFOLIO_CONSUMER_ENABLED: ${PORTFOLIO_CONSUMER_ENABLED}
+      # Portfolio pricing. The key stays in the environment of this container; the browser never sees it.
+      FAUXNANCE_BASE_URL: ${FAUXNANCE_BASE_URL}
+      FAUXNANCE_API_KEY: ${FAUXNANCE_API_KEY}
+      PORTFOLIO_QUOTE_TTL_SECONDS: ${PORTFOLIO_QUOTE_TTL_SECONDS}
+      PORTFOLIO_STALE_AFTER_SECONDS: ${PORTFOLIO_STALE_AFTER_SECONDS}
+      PORTFOLIO_PROVIDER_COOLDOWN_SECONDS: ${PORTFOLIO_PROVIDER_COOLDOWN_SECONDS}
+      # The e-mail notification channel. Without SMTP_HOST it records a masked stub line instead of sending.
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_FROM: ${SMTP_FROM}
+      SMTP_AUTH: ${SMTP_AUTH}
+      SMTP_STARTTLS: ${SMTP_STARTTLS}
+      NOTIFICATIONS_DISPATCH_INTERVAL_MS: ${NOTIFICATIONS_DISPATCH_INTERVAL_MS}
+      # The in-app assistant. The Gemini key lives only in this container's environment (set it in .env, which is
+      # git-ignored); the browser never sees it. Without it the assistant still answers from account data.
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GEMINI_BASE_URL: ${GEMINI_BASE_URL}
+      GEMINI_MODEL: ${GEMINI_MODEL}
+      GEMINI_FALLBACK_MODELS: ${GEMINI_FALLBACK_MODELS}
+      # Automated trading. The simulation button places a REAL order from a scripted price path; off unless true.
+      AUTOMATION_ENABLED: ${AUTOMATION_ENABLED}
+      AUTOMATION_SIMULATION: ${AUTOMATION_SIMULATION}
+      ALERTS_MAX_PER_ACCOUNT: ${ALERTS_MAX_PER_ACCOUNT}
+      FUNDS_MAX_PER_MOVEMENT: ${FUNDS_MAX_PER_MOVEMENT}
+      CANDLES_CACHE_SECONDS: ${CANDLES_CACHE_SECONDS}
+      ADVICE_SHORT_PERIOD: ${ADVICE_SHORT_PERIOD}
+      ADVICE_LONG_PERIOD: ${ADVICE_LONG_PERIOD}
+    ports:
+      - "${ORDER_SERVICE_PORT}:${ORDER_SERVICE_PORT}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:${ORDER_SERVICE_PORT}/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 30s
+    networks:
+      - trading-net
+
+  trade-executor:
+    profiles: ["platform"]
+    build:
+      context: ./services/executor
+      dockerfile: Dockerfile
+      args:
+        EXECUTOR_SERVICE_PORT: ${EXECUTOR_SERVICE_PORT}
+    environment:
+      EXECUTOR_SERVICE_PORT: ${EXECUTOR_SERVICE_PORT}
+      # Inside the compose network the database is the postgres service on its own port.
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_SCHEMA_TRADE: ${DB_SCHEMA_TRADE}
+      # The broker on the compose network (KAFKA_HOST:KAFKA_PORT, kafka:29092).
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_HOST}:${KAFKA_PORT}
+      FAUXNANCE_API_KEY: ${FAUXNANCE_API_KEY}
+      FAUXNANCE_BASE_URL: ${FAUXNANCE_BASE_URL}
+      POLL_INTERVAL_SECONDS: ${POLL_INTERVAL_SECONDS}
+    ports:
+      - "${EXECUTOR_SERVICE_PORT}:${EXECUTOR_SERVICE_PORT}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:${EXECUTOR_SERVICE_PORT}/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 30s
+    networks:
+      - trading-net
+
+  kafka:
+    image: apache/kafka:3.8.0
+    profiles: [ "platform" ]
+    container_name: kafka
+
+    ports:
+      - "${KAFKA_EXTERNAL_PORT}:9092"
+
+    environment:
+      KAFKA_NODE_ID: 1
+
+      KAFKA_PROCESS_ROLES: broker,controller
+
+      KAFKA_LISTENERS: INTERNAL://:${KAFKA_PORT},EXTERNAL://:9092,CONTROLLER://:9093
+
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://${KAFKA_HOST}:${KAFKA_PORT},EXTERNAL://${KAFKA_EXTERNAL_ADVERTISED}
+
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: false
+
+    networks:
+      - trading-net
+
+  kafka-init:
+    image: apache/kafka:3.8.0
+    profiles: ["platform"]
+
+    depends_on:
+      - kafka
+
+    environment:
+      KAFKA_BOOTSTRAP: ${KAFKA_HOST}:${KAFKA_PORT}
+    volumes:
+      - ./infrastructure/kafka/scripts/create-topics.sh:/create-topics.sh:ro
+
+    entrypoint: ["/bin/bash", "/create-topics.sh"]
+
+    networks:
+      - trading-net
+
+  kafbat-ui:
+    image: ghcr.io/kafbat/kafka-ui:latest 
+    profiles: ["platform"]
+    ports:
+      - "${KAFKA_UI_PORT}:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: ${KAFKA_HOST}:${KAFKA_PORT}
+    depends_on:
+      - kafka
+    networks:
+      - trading-net
+
+  sonarqube:
+    image: sonarqube:community
+    container_name: sonarqube-se5team2
+    profiles: ["sonar"]
+    ports:
+      - "9000:9000"
+    volumes:
+      - sonarqube-data:/opt/sonarqube/data
+      - sonarqube-logs:/opt/sonarqube/logs
+      - sonarqube-extensions:/opt/sonarqube/extensions
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:9000/api/system/status | grep -q '\"status\":\"UP\"'"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    networks:
+      - trading-net
+
+  # ---------------------------------------------------------------------------
+  # Sonar scan services (profile: sonar-scan)
+  # Usage:
+  #   docker compose --profile sonar-scan run --rm sonar-scan-executor
+  #   docker compose --profile sonar-scan run --rm sonar-scan-trade-api
+  #   docker compose --profile sonar-scan run --rm sonar-scan-pipeline
+  # Requires sonarqube to be running: docker compose --profile sonar up -d
+  # ---------------------------------------------------------------------------
+
+  sonar-scan-executor:
+    image: maven:3.9.9-eclipse-temurin-21
+    profiles: ["sonar-scan"]
+    working_dir: /workspace
+    volumes:
+      - ./services/executor:/workspace
+      - maven-repo:/root/.m2
+    environment:
+      SONAR_TOKEN: ${SONAR_TOKEN}
+    # projectKey, projectName, host.url are in executor/pom.xml <properties>
+    # host.url override: inside Docker the server is reachable via service name, not localhost
+    entrypoint: ["mvn", "-B",
+      "clean", "verify", "sonar:sonar",
+      "-Dsonar.host.url=${SONAR_HOST_URL}",
+      "-Dsonar.token=${SONAR_TOKEN}"]
+    networks:
+      - trading-net
+
+  sonar-scan-trade-api:
+    image: maven:3.9.9-eclipse-temurin-21
+    profiles: ["sonar-scan"]
+    working_dir: /workspace
+    volumes:
+      - ./services/trade-api:/workspace
+      - maven-repo:/root/.m2
+    environment:
+      SONAR_TOKEN: ${SONAR_TOKEN}
+    # projectKey, projectName, host.url are in trade-api/pom.xml <properties>
+    entrypoint: ["mvn", "-B",
+      "clean", "verify", "sonar:sonar",
+      "-Dsonar.host.url=${SONAR_HOST_URL}",
+      "-Dsonar.token=${SONAR_TOKEN}"]
+    networks:
+      - trading-net
+
+  sonar-scan-pipeline:
+    image: sonarsource/sonar-scanner-cli
+    profiles: ["sonar-scan"]
+    working_dir: /usr/src
+    volumes:
+      - ./ETL_Layer:/usr/src
+    environment:
+      SONAR_HOST_URL: ${SONAR_HOST_URL}
+      SONAR_TOKEN: ${SONAR_TOKEN}
+    # sonar-project.properties in analytics/ carries projectKey, sources, tests, coverage path
+    networks:
+      - trading-net
+
+volumes:
+  postgres-data:
+  sonarqube-data:
+  sonarqube-logs:
+  sonarqube-extensions:
+  maven-repo:
+
+networks:
+  trading-net:
+    name: trading-net

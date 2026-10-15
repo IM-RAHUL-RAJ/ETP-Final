@@ -1,0 +1,225 @@
+:host {
+  display: contents;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100dvh;
+  width: var(--sidebar-w);
+  padding: 14px 12px;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  transition: width 0.3s ease-in-out;
+}
+
+.sidebar--collapsed {
+  width: var(--sidebar-w-collapsed);
+}
+
+.sidebar__brand {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 6px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  text-decoration: none;
+}
+
+.sidebar__nav {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  flex: 1;
+}
+
+.nav-item,
+.sidebar__toggle {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 40px;
+  padding: 0 9px;
+  border: none;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 700;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--fast) ease-out,
+    color var(--fast) ease-out;
+}
+
+.nav-item:hover,
+.sidebar__toggle:hover {
+  background: var(--muted-bg);
+  color: var(--text);
+}
+
+/* The page you are on: a solid chip and a red pixel bar on the edge. */
+.nav-item.active {
+  color: var(--text);
+  background: var(--muted-bg);
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 9px;
+  bottom: 9px;
+  width: 3px;
+  background: var(--signal);
+}
+
+.nav-item app-icon,
+.sidebar__toggle app-icon {
+  flex: none;
+}
+
+.nav-item__label {
+  overflow: hidden;
+}
+
+.nav-count {
+  margin-left: auto;
+  min-width: 20px;
+  padding: 0 6px;
+  background: var(--signal);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 20px;
+  text-align: center;
+}
+
+.sidebar__toggle {
+  width: 40px;
+  padding: 0;
+  justify-content: center;
+}
+
+.sidebar__chevron {
+  transition: transform 0.3s ease-in-out;
+}
+
+/* Collapsed: icons only. Each item is a 40px square, so the highlight is exactly as wide as the icon button,
+   the labels are gone (not just faded), and the unread count becomes a single red pixel block. */
+.sidebar--collapsed .nav-item {
+  width: 40px;
+  padding: 0;
+  justify-content: center;
+}
+
+.sidebar--collapsed .nav-item__label {
+  display: none;
+}
+
+.sidebar--collapsed .nav-count {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-width: 0;
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  margin: 0;
+  font-size: 0;
+  line-height: 0;
+}
+
+.sidebar--collapsed .sidebar__brand {
+  justify-content: center;
+  padding: 0;
+}
+
+.sidebar--collapsed .sidebar__chevron {
+  transform: rotate(180deg);
+}
+
+.scrim {
+  display: none;
+}
+
+/* Hover labels for the icon-only state sit beside the icon, not above it. */
+.sidebar [data-tip]::after {
+  left: calc(100% + 12px);
+  right: auto;
+  bottom: auto;
+  top: 50%;
+  transform: translateY(-50%) translateX(-4px);
+}
+
+.sidebar [data-tip]:hover::after,
+.sidebar [data-tip]:focus-visible::after {
+  transform: translateY(-50%) translateX(0);
+}
+
+/* On a phone the sidebar is a drawer: hidden off-screen, slid over the page on request. */
+@media (max-width: 800px) {
+  .sidebar,
+  .sidebar--collapsed {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: min(280px, 82vw);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+    box-shadow: var(--shadow-md);
+  }
+
+  .sidebar--collapsed .nav-item {
+    width: auto;
+    padding: 0 9px;
+    justify-content: flex-start;
+  }
+
+  .sidebar--collapsed .nav-item__label {
+    display: inline;
+  }
+
+  .sidebar--collapsed .nav-count {
+    position: static;
+    width: auto;
+    height: auto;
+    min-width: 20px;
+    padding: 0 6px;
+    margin-left: auto;
+    font-size: 12px;
+    line-height: 20px;
+  }
+
+  .sidebar--open {
+    transform: translateX(0);
+  }
+
+  .sidebar__toggle {
+    display: none;
+  }
+
+  .scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 39;
+    background: rgba(0, 0, 0, 0.5);
+    animation: fadeIn var(--enter) ease-out;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .sidebar__chevron {
+    transition: none;
+  }
+}

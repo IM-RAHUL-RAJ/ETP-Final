@@ -1,0 +1,16 @@
+@if (toasts.toasts().length > 0) {
+  <div class="dock" data-testid="mascot-dock">
+    <div class="dock__bubbles" aria-live="polite" aria-atomic="false">
+      @for (toast of toasts.toasts(); track toast.id) {
+        <div class="bubble" [attr.data-tone]="toast.tone" role="status" data-testid="toast">
+          <button type="button" class="bubble__close" (click)="toasts.dismiss(toast.id)" aria-label="Dismiss">x</button>
+          @if (toast.title) {
+            <strong class="bubble__title">{{ toast.title }}</strong>
+          }
+          <span class="bubble__text">{{ toast.message }}</span>
+        </div>
+      }
+    </div>
+    <app-mascot class="dock__mascot" [action]="action()" [size]="76" [interactive]="false" />
+  </div>
+}
