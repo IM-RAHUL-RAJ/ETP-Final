@@ -161,6 +161,17 @@ The four public URL values must already be correct in:
 k8s/overlays/four-lb/urls.env
 ```
 
+## Kubernetes Cleanup Before CD
+
+If old application workloads are still running or consuming RDS connections,
+open [`prereq.md`](prereq.md) and run its kubectl cleanup commands first.
+
+The prerequisite uses the existing kubectl context and removes only the auth,
+order, executor, frontend, and Kafka workloads. It does not configure AWS,
+delete the cluster, delete PVCs, or remove Kubernetes Secrets.
+
+After cleanup, run CD with the CI-generated `IMAGE_TAG`.
+
 ## 7. CD Execution Order
 
 `JenkinsfileCD` runs these stages in order:
